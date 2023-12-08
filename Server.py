@@ -1,7 +1,6 @@
-import warnings
-
 import tqdm
 import socket
+import warnings
 
 class Server:
     def __init__(self, host, port):
@@ -9,7 +8,14 @@ class Server:
         self.port = port
 
     def start(self):
-        # Create a server socket and listen for client connections
+        """
+        Start server and waits for client connections.
+
+        Creates a server socket, binds to host and port, and listens for clients.
+        Upon connection, prints client information.
+
+        :return: None
+        """
         server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         server_socket.bind((self.host, self.port))
         server_socket.listen()
@@ -19,12 +25,31 @@ class Server:
         print(f"New client connected: {self.client_socket.getpeername()}")
 
     def receive_data(self, bytes_to_read):
+        """
+        Receive and decode data from a client.
+
+        Attempts to receive the specified number of bytes from the client socket
+        and decodes the received data into a string.
+
+        :param: bytes_to_read: The number of bytes to receive.
+        :type: int
+
+        :return: The decoded string data received from the client.
+        :rtype: str
+        """
         try:
             return self.client_socket.recv(bytes_to_read).decode()
         except Exception as e:
             print(f"Error receiving data: {e}")
 
     def receive_file(self):
+        """
+        Receive a file from a connected client.
+
+        This method expects the client to send the file name, file size, and file data.
+
+        :return: None
+        """
         try:
             file_name = self.receive_data(1024)
             file_size = int(self.receive_data(1024))

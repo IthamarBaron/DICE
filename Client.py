@@ -7,6 +7,15 @@ class Client:
         self.port = port
 
     def connect_to_server(self):
+        """
+        Connect to the server at the specified host and port.
+
+        This method creates a client socket, connects it to the server, and prints a success
+        message upon successful connection.
+
+        :return: None
+        """
+
         try:
             self.client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             self.client_socket.connect((self.host, self.port))
@@ -15,6 +24,22 @@ class Client:
             print(f"Connection error: {str(e)}")
 
     def send_data(self, data, need_encode=True, sendall=False):
+        """
+        Send data to the connected server.
+
+        This method sends the specified data to the server through the client socket.
+
+        :param data: The data to be sent.
+        :type: data: Any
+
+        :param need_encode: Flag indicating whether the data should be encoded (default is True).
+        :type need_encode: bool
+
+        :param sendall: Flag indicating whether to use sendall method for sending all data at once (default is False).
+        :type sendall: bool
+
+        :return: None
+        """
         try:
             if sendall:
                 self.client_socket.sendall(data)
@@ -26,6 +51,18 @@ class Client:
             print(f"Error sending data to the server: {e}")
 
     def send_file_to_server(self, file_name):
+        """
+        Send a file to the server.
+
+        This method sends the file name, file size, and file data to the server.
+
+        :param: file_name: The name of the file to send.
+        :type: file_name: str
+
+        :return: None
+        :raises Exception: If an error occurs during file transmission.
+        """
+
         file = open(file_name, "rb")
         file_size = os.path.getsize(file_name)
         file_data = file.read()
