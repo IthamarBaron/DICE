@@ -24,18 +24,15 @@ class Server:
         self.client_socket, _ = server_socket.accept()
         print(f"New client connected: {self.client_socket.getpeername()}")
 
-    def receive_data(self, bytes_to_read):
+    def receive_data(self, bytes_to_read: int) -> str:
         """
         Receive and decode data from a client.
 
         Attempts to receive the specified number of bytes from the client socket
         and decodes the received data into a string.
-
         :param: bytes_to_read: The number of bytes to receive.
-        :type: int
 
         :return: The decoded string data received from the client.
-        :rtype: str
         """
         try:
             return self.client_socket.recv(bytes_to_read).decode()
