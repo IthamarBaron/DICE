@@ -23,7 +23,8 @@ def run_discord_bot():
         activity = Activity(name="Information", type=ActivityType.watching)
         await bot.change_presence(activity=activity)
 
-    async def get_message_id_by_content(bot, guild, channel_name, message_content):
+    async def get_message_id_by_content(channel_name: str, message_content: str) -> int:
+        guild = bot.guilds[0]
         channel = discord.utils.get(guild.channels, name=channel_name)
 
         if channel:
@@ -31,22 +32,7 @@ def run_discord_bot():
                 if message.content == message_content:
                     return message.id
 
-        return None  # Message not found
-
-    # Example of usage
-    async def get_id():
-        bot_instance = bot
-        guild_instance = bot_instance.guilds[0]
-        channel_name = "bot-playground"
-        message_content = "helloworld"
-
-        message_id = await get_message_id_by_content(bot_instance, guild_instance, channel_name, message_content)
-
-        if message_id:
-            print(f"The message ID is: {message_id}")
-        else:
-            print("Message not found.")
-
+        return -1  # message not found
 
     @bot.event
     async def on_message(message:discord.Message):
@@ -63,23 +49,31 @@ def run_discord_bot():
         file = open(file_name, "rb")
         file_data = file.read()
         file.close()
+
         # Check if the message is "send" or "get"
-        if user_message.lower() == "send":
+        if user_message.startswith("send"): #send <filename>
+            # region <temp message reference allocation>
+            await message.channel.send("File sending in process.")
+            await message.channel.send(user_message[5::])
+            message_id = await get_message_id_by_content(channel, user_message[5::])
+            # endregion
             FM = FileManager()
             data_list = FM.split_file_data(file_data)
-            reference_message = await message.channel.fetch_message(1185151312933945465)
-
+            reference_message = await message.channel.fetch_message(message_id)
             for i, chunk in enumerate(data_list):
-                file_data = discord.File(chunk, filename=f"TempFile{i}.txt")
+                file_data = discord.File(chunk, filename=f"{reference_message.content}{i}.txt")
                 await message.channel.send(content=f"Chunk {i + 1}:", file=file_data, reference=reference_message)
-            await message.channel.send("File Sending complete.")
+            await message.channel.send("File sending complete.")
 
         elif user_message.lower() == "get":
             #assemble file
             await message.channel.send("File assembly complete.")
 
-        elif user_message.lower() == "id":
-            await get_id()
+        elif user_message.startswith("LOG"):
+            message_id = await get_message_id_by_content(channel, "34mb-example")
+            reference_message = await message.channel.fetch_message(message_id)
+            print(f"{reference_message} is: {reference_message.content} in {reference_message.channel} attachments {reference_message.attachments}")
+
 
     bot.run(TOKEN)
 
