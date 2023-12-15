@@ -1,9 +1,6 @@
 import discord
 from discord import Activity, ActivityType
-from discord.ext import commands
-import io
-import base64
-import os
+import time
 
 from FileManager import FileManager
 
@@ -35,7 +32,7 @@ def run_discord_bot():
         return -1  # message not found
 
     @bot.event
-    async def on_message(message:discord.Message):
+    async def on_message(message: discord.Message):
         if message.author == bot.user:
             return  # Don't respond to ourselves
 
@@ -70,10 +67,20 @@ def run_discord_bot():
             await message.channel.send("File assembly complete.")
 
         elif user_message.startswith("LOG"):
+            await message.channel.send("Logged the data in the console!.")
             message_id = await get_message_id_by_content(channel, "34mb-example")
             reference_message = await message.channel.fetch_message(message_id)
-            print(f"{reference_message} is: {reference_message.content} in {reference_message.channel} attachments {reference_message.attachments}")
+            print(f"ID: {message_id} is: {reference_message.content} in {reference_message.channel} attachments {reference_message.attachments}")
+            start_time = time.time()
 
+            all_messages = []
+            # Iterate over the async generator and collect messages in a list
+            async for message in reference_message.channel.history(limit=None):
+                all_messages.append(message)
+            reply_messages = [message for message in all_messages if message.reference and message.reference.message_id == message_id]
+            elapsed_time = time.time() - start_time
+            # The `reply_messages` list now contains all messages replying to the original message
+            print(f"messages that replay to id: {message_id} are: {len(reply_messages)} TIME ELAPSED: {elapsed_time}")
 
     bot.run(TOKEN)
 
