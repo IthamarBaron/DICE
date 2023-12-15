@@ -14,7 +14,7 @@ intents.messages = True
 intents.message_content = True
 
 def run_discord_bot():
-    TOKEN = "MTE4Mjk5MTE2MTg3NTQ5NzAyMQ.G3clfU.o6wcAsmw0IZXYhhbu8AChN-oARuXUa1B9fTl7w"
+    TOKEN = ""
     bot = discord.Client(intents=intents)
 
     @bot.event
@@ -22,6 +22,31 @@ def run_discord_bot():
         print(f"{bot.user} is running")
         activity = Activity(name="Information", type=ActivityType.watching)
         await bot.change_presence(activity=activity)
+
+    async def get_message_id_by_content(bot, guild, channel_name, message_content):
+        channel = discord.utils.get(guild.channels, name=channel_name)
+
+        if channel:
+            async for message in channel.history(limit=100):
+                if message.content == message_content:
+                    return message.id
+
+        return None  # Message not found
+
+    # Example of usage
+    async def get_id():
+        bot_instance = bot
+        guild_instance = bot_instance.guilds[0]
+        channel_name = "bot-playground"
+        message_content = "helloworld"
+
+        message_id = await get_message_id_by_content(bot_instance, guild_instance, channel_name, message_content)
+
+        if message_id:
+            print(f"The message ID is: {message_id}")
+        else:
+            print("Message not found.")
+
 
     @bot.event
     async def on_message(message:discord.Message):
@@ -40,18 +65,21 @@ def run_discord_bot():
         file.close()
         # Check if the message is "send" or "get"
         if user_message.lower() == "send":
-
             FM = FileManager()
             data_list = FM.split_file_data(file_data)
-            for i, chunk in enumerate(data_list):
+            reference_message = await message.channel.fetch_message(1185151312933945465)
 
+            for i, chunk in enumerate(data_list):
                 file_data = discord.File(chunk, filename=f"TempFile{i}.txt")
-                await message.channel.send(file=file_data)
+                await message.channel.send(content=f"Chunk {i + 1}:", file=file_data, reference=reference_message)
             await message.channel.send("File Sending complete.")
 
         elif user_message.lower() == "get":
             #assemble file
             await message.channel.send("File assembly complete.")
+
+        elif user_message.lower() == "id":
+            await get_id()
 
     bot.run(TOKEN)
 
