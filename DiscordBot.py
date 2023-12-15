@@ -14,7 +14,7 @@ intents.messages = True
 intents.message_content = True
 
 def run_discord_bot():
-    TOKEN = ""
+    TOKEN = "MTE4Mjk5MTE2MTg3NTQ5NzAyMQ.G3clfU.o6wcAsmw0IZXYhhbu8AChN-oARuXUa1B9fTl7w"
     bot = discord.Client(intents=intents)
 
     @bot.event
@@ -32,7 +32,7 @@ def run_discord_bot():
         user_message = str(message.content)
         channel = str(message.channel)
         print(f"{username} said: {user_message} in {channel} attachments {message.attachments}")
-        await message.channel.send(f"Im here!")
+        await message.channel.send(f"Noticed Input")
 
         file_name = "34mb.exe"
         file = open(file_name, "rb")

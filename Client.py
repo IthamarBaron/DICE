@@ -6,7 +6,7 @@ class Client:
         self.host = host
         self.port = port
 
-    def connect_to_server(self):
+    def connect_to_server(self) -> None:
         """
         Connect to the server at the specified host and port.
 
@@ -23,22 +23,15 @@ class Client:
         except Exception as e:
             print(f"Connection error: {str(e)}")
 
-    def send_data(self, data, need_encode=True, sendall=False):
+    def send_data(self, data, need_encode=True, sendall=False) -> None:
         """
         Send data to the connected server.
 
         This method sends the specified data to the server through the client socket.
 
         :param data: The data to be sent.
-        :type: data: Any
-
         :param need_encode: Flag indicating whether the data should be encoded (default is True).
-        :type need_encode: bool
-
         :param sendall: Flag indicating whether to use sendall method for sending all data at once (default is False).
-        :type sendall: bool
-
-        :return: None
         """
         try:
             if sendall:
@@ -50,29 +43,24 @@ class Client:
         except Exception as e:
             print(f"Error sending data to the server: {e}")
 
-    def send_file_to_server(self, file_name):
+    def send_file_to_server(self, file_name: str) -> None:
         """
         Send a file to the server.
 
         This method sends the file name, file size, and file data to the server.
-
         :param: file_name: The name of the file to send.
-        :type: file_name: str
-
-        :return: None
-        :raises Exception: If an error occurs during file transmission.
         """
-
         file = open(file_name, "rb")
         file_size = os.path.getsize(file_name)
         file_data = file.read()
+        file.close()
 
         self.send_data(file_name)
         self.send_data(file_size)
         self.send_data(file_data, sendall=True)
         self.send_data(b"[END]", need_encode=False)
 
-        file.close()
+
 
 if __name__ == "__main__":
     client = Client('LocalHost', 12345)

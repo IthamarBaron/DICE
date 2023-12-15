@@ -7,7 +7,7 @@ class Server:
         self.host = host
         self.port = port
 
-    def start(self):
+    def start(self) -> None:
         """
         Start server and waits for client connections.
 
@@ -39,7 +39,7 @@ class Server:
         except Exception as e:
             print(f"Error receiving data: {e}")
 
-    def receive_file(self):
+    def receive_file(self) -> None:
         """
         Receive a file from a connected client.
 
@@ -74,6 +74,6 @@ class Server:
 
 
 if __name__ == "__main__":
-    server = Server('0.0.0.0', 12345)
+    server = Server('LocalHost', 12345)
     server.start()
     server.receive_file()
