@@ -67,7 +67,7 @@ def run_discord_bot():
             await message.channel.send("File assembly complete.")
 
         elif user_message.startswith("LOG"):
-            await message.channel.send("Logged the data in the console!.")
+            await message.channel.send("Logged the data in the console!")
             message_id = await get_message_id_by_content(channel, "34mb-example")
             reference_message = await message.channel.fetch_message(message_id)
             print(f"ID: {message_id} is: {reference_message.content} in {reference_message.channel} attachments {reference_message.attachments}")
