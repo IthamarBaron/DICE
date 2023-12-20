@@ -1,9 +1,9 @@
-import discord
-from discord import Activity, ActivityType
+import io
 import time
+import discord
 import requests
 from FileManager import FileManager
-import io
+from discord import Activity, ActivityType
 
 intents = discord.Intents.all()
 intents.typing = False
@@ -11,18 +11,21 @@ intents.presences = False
 intents.messages = True
 intents.message_content = True
 
+TOKEN = ""
+
+
 def assemble_file_from_replays(sorted_reply_messages):
-    data=b""
+    file_data = b""
     for replay in sorted_reply_messages:
         chunk_link = replay.attachments[0].url
         chunk_data = requests.get(chunk_link).content
-        data += (chunk_data)
+        file_data += chunk_data
 
     with open("recreated-file", "wb") as file:
-        file.write(data)
+        file.write(file_data)
+
 
 def run_discord_bot():
-    TOKEN = ""
     bot = discord.Client(intents=intents)
 
     @bot.event
@@ -58,14 +61,14 @@ def run_discord_bot():
         file.close()
 
         # Check if the message is "send" or "get"
-        if user_message.startswith("send"): #send <filename>
+        if user_message.startswith("send"):  # send <filename>
             # region message reference allocation
             await channel.send("File sending in process.")
             await channel.send(user_message[5::])
             message_id = await get_message_id_by_content(str(channel), user_message[5::])
             # endregion
-            FM = FileManager()
-            data_list = FM.split_file_data(file_data)
+            file_manager = FileManager()
+            data_list = file_manager.split_file_data(file_data)
             reference_message = await message.channel.fetch_message(message_id)
             for i, chunk in enumerate(data_list):
                 file_data = discord.File(chunk, filename=f"{reference_message.content}{i}.txt")
@@ -77,8 +80,8 @@ def run_discord_bot():
 
             await message.channel.send("File assembly in progress...")
             file_name = user_message[4::]
-            message_id = await get_message_id_by_content(str(channel), file_name)
-            reference_message = await message.channel.fetch_message(message_id)
+            message_id = await get_message_id_by_content(str(channel), file_name)  # find message id
+            reference_message = await message.channel.fetch_message(message_id)  # find message by id
 
             all_messages = []
             # Iterate over the async generator and collect messages in a list
@@ -89,8 +92,8 @@ def run_discord_bot():
             assemble_file_from_replays(sorted_reply_messages)
             await message.channel.send("File assembly in completed!")
 
-
         elif user_message.startswith("LOG"):
+
             await message.channel.send("Logged the data in the console!")
             message_id = await get_message_id_by_content(str(channel), "168mb")
             reference_message = await message.channel.fetch_message(message_id)
@@ -112,6 +115,7 @@ def run_discord_bot():
             assemble_file_from_replays(sorted_reply_messages)
 
     bot.run(TOKEN)
+
 
 run_discord_bot()
 
