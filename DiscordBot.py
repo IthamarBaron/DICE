@@ -12,9 +12,14 @@ intents.messages = True
 intents.message_content = True
 
 def assemble_file_from_replays(sorted_reply_messages):
+    data=b""
     for replay in sorted_reply_messages:
         chunk_link = replay.attachments[0].url
-        chunk_data = requests.get(chunk_link).content # bytes containing message attachment file
+        chunk_data = requests.get(chunk_link).content
+        data += (chunk_data)
+
+    with open("recreated-file", "wb") as file:
+        file.write(data)
 
 def run_discord_bot():
     TOKEN = ""
@@ -47,7 +52,7 @@ def run_discord_bot():
         print(f"{username} said: {user_message} in {channel} attachments {message.attachments}")
         await message.channel.send(f"Noticed Input")
 
-        file_name = "34mb.exe"
+        file_name = "Ctest.txt"
         file = open(file_name, "rb")
         file_data = file.read()
         file.close()
@@ -87,7 +92,7 @@ def run_discord_bot():
 
         elif user_message.startswith("LOG"):
             await message.channel.send("Logged the data in the console!")
-            message_id = await get_message_id_by_content(str(channel), "34mb-example")
+            message_id = await get_message_id_by_content(str(channel), "168mb")
             reference_message = await message.channel.fetch_message(message_id)
             print(f"ID: {message_id} is: {reference_message.content} in {reference_message.channel} attachments {reference_message.attachments}")
             start_time = time.time()
