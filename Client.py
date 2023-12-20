@@ -44,15 +44,17 @@ class Client:
         except Exception as e:
             print(f"Error sending data to the server: {e}")
 
-    def send_file_to_server(self, file_name: str) -> None:
+    def send_file_to_server(self, file_path: str) -> None:
         """
         Send a file to the server.
 
         This method sends the file name, file size, and file data to the server.
-        :param: file_name: The name of the file to send.
+        :param file_path: The path of the file to send.
         """
-        file = open(file_name, "rb")
-        file_size = os.path.getsize(file_name)
+        file_name = os.path.basename(file_path)
+
+        file = open(file_path, "rb")
+        file_size = os.path.getsize(file_path)
         file_data = file.read()
         file.close()
 
@@ -65,4 +67,4 @@ class Client:
 if __name__ == "__main__":
     client = Client('LocalHost', 12345)
     client.connect_to_server()
-    client.send_file_to_server("tomerXd.mp4")
+    client.send_file_to_server("")

@@ -1,7 +1,9 @@
+import threading
 import tkinter as tk
 from tkinter import filedialog
 from Client import Client
 
+client_instance = Client('LocalHost', 12345)
 class ServerConnectionUI:
     def __init__(self, root, client_ui):
         self.root = root
@@ -18,9 +20,7 @@ class ServerConnectionUI:
         self.connect_button.pack(pady=20)
 
     def connect_to_server(self):
-        client_instance = Client('LocalHost', 12345)
         client_instance.connect_to_server()
-        client_instance.send_file_to_server("tomerXd.mp4")
 
         self.root.destroy()
         self.client_ui.root.deiconify()
@@ -29,7 +29,7 @@ class ServerConnectionUI:
 class ClientUI:
     def __init__(self, root):
         self.root = root
-        root.title("File Upload Application")
+        root.title("File Upload")
 
         # Create and place the title label
         self.title_label = tk.Label(root, text="Welcome to Dice", font=("Arial", 16))
@@ -51,28 +51,21 @@ class ClientUI:
 
     def upload_file(self):
         file_path = filedialog.askopenfilename()
-        # store the path in the client
+        self.uploaded_file_path = file_path
+        print(f"file Path: {file_path}")
 
     def send_data(self):
-        # send the file data to the server
-        pass
+        # Create a new thread and pass the send_file_to_server method as the target
+        thread = threading.Thread(target=client_instance.send_file_to_server, args=(self.uploaded_file_path,))
+        # Start the thread
+        thread.start()
+        thread.join()
 
     def open_server_connection(self):
-        # Create a new root for the server connection window
         server_root = tk.Tk()
-
-        # Instantiate the ServerConnectionUI class
         server_connection_ui = ServerConnectionUI(server_root, self)
-
-        # Start the Tkinter event loop for the server connection window
         server_root.mainloop()
 
-
-# Create the main Tkinter window
 root = tk.Tk()
-
-# Instantiate the ClientUI class
 app = ClientUI(root)
-
-# Start the Tkinter event loop
 root.mainloop()
