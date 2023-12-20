@@ -1,6 +1,7 @@
 import os
 import socket
 
+
 class Client:
     def __init__(self, host, port):
         self.host = host
@@ -59,7 +60,6 @@ class Client:
         self.send_data(file_size)
         self.send_data(file_data, sendall=True)
         self.send_data(b"[END]", need_encode=False)
-
 
 
 if __name__ == "__main__":
