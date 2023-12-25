@@ -60,13 +60,12 @@ class Server:
             done_receiving = False
 
             while not done_receiving:
-                part_of_file = self.client_socket.recv(1024)
                 if file_bytes[-5:] == b'[END]':
                     done_receiving = True
                 else:
+                    part_of_file = self.client_socket.recv(1024)
                     file_bytes += part_of_file
                 progress.update(1024 / (1024 ** 2))
-
             file.write(file_bytes)
             file.close()
         except Exception as e:

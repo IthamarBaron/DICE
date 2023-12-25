@@ -1,4 +1,5 @@
 import threading
+import time
 import tkinter as tk
 from tkinter import filedialog
 from Client import Client
@@ -54,12 +55,17 @@ class ClientUI:
         self.uploaded_file_path = file_path
         print(f"file Path: {file_path}")
 
+    """ thread = threading.Thread(target=client_instance.send_file_to_server, args=(self.uploaded_file_path,))
+        thread.start()                     client_instance.send_file_to_server(self.uploaded_file_path)"""
+
+    """ for i in range(1000):pass"""
     def send_data(self):
-        # Create a new thread and pass the send_file_to_server method as the target
+        start_time = time.time()
         thread = threading.Thread(target=client_instance.send_file_to_server, args=(self.uploaded_file_path,))
-        # Start the thread
         thread.start()
-        thread.join()
+        elapsed_time = time.time() - start_time
+        print(f"Time elapsed in sed_data: {elapsed_time}")
+
 
     def open_server_connection(self):
         server_root = tk.Tk()

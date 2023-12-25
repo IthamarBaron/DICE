@@ -1,5 +1,6 @@
 import os
 import socket
+import time
 
 
 class Client:
@@ -51,6 +52,7 @@ class Client:
         This method sends the file name, file size, and file data to the server.
         :param file_path: The path of the file to send.
         """
+        start_time = time.time()
         file_name = os.path.basename(file_path)
 
         file = open(file_path, "rb")
@@ -62,9 +64,11 @@ class Client:
         self.send_data(file_size)
         self.send_data(file_data, sendall=True)
         self.send_data(b"[END]", need_encode=False)
+        elapsed_time = time.time() - start_time
+        print(f"Time elapsed in send_file_to_server : {elapsed_time}")
 
 
 if __name__ == "__main__":
     client = Client('LocalHost', 12345)
     client.connect_to_server()
-    client.send_file_to_server("")
+    client.send_file_to_server("test.txt")
