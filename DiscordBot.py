@@ -28,20 +28,44 @@ class DiscordBot:
 
         return -1  # message not found
 
-    def assemble_file_from_replays(self, sorted_reply_messages):
-        file_data = b""
-        for replay in sorted_reply_messages:
-            chunk_link = replay.attachments[0].url
-            chunk_data = requests.get(chunk_link).content
-            file_data += chunk_data
-
-        with open("recreated-file", "wb") as file:
-            file.write(file_data)
-
     async def on_ready(self):
         print(f"{self.bot.user} is running")
         activity = Activity(name="Information", type=ActivityType.watching)
         await self.bot.change_presence(activity=activity)
+
+    async def send_file_in_chat(self, file_name, file_content, channel_id=1182998507460771890):
+        try:
+            if isinstance(channel_id, int):
+                channel = self.bot.get_channel(channel_id)
+            await channel.send("File sending in process.")
+            await channel.send(file_name)
+            message_id = await self.get_message_id_by_content(str(channel), file_name)
+            reference_message = await channel.fetch_message(message_id)
+            data_list = self.file_manager.split_file_data(file_content)
+            for i, chunk in enumerate(data_list):
+                file_data = discord.File(chunk, filename=f"{reference_message.content}{i}.txt")
+                await channel.send(content=f"Chunk {i + 1}:", file=file_data, reference=reference_message)
+            await channel.send("File sending complete.")
+        except Exception as e:
+            print(f"Error sending file in chat: {e}")
+
+    async def assemble_file_from_chat(self, message_id, channel_id=1182998507460771890):
+        try:
+            if isinstance(channel_id, int):
+                channel = self.bot.get_channel(channel_id)
+            await channel.send("File assembly in progress...")
+            reference_message = await channel.fetch_message(message_id)
+            all_messages = []
+            async for msg in reference_message.channel.history(limit=None):
+                all_messages.append(msg)
+            reply_messages = [msg for msg in all_messages if msg.reference and msg.reference.message_id == message_id]
+            sorted_reply_messages = sorted(reply_messages, key=lambda msg: msg.created_at)
+            print(f"Type of sorted: {type(sorted_reply_messages)} type of [0] {type(sorted_reply_messages[0])}")
+            self.file_manager.assemble_file(sorted_reply_messages)
+            await channel.send("File assembly completed!")
+        except Exception as e:
+            await channel.send("File assembly failed!")
+            print(f"Error during file assembling: {e}")
 
     async def on_message(self, message: discord.Message):
         if message.author == self.bot.user:
@@ -60,29 +84,12 @@ class DiscordBot:
 
         # Check if the message is "send" or "get"
         if user_message.startswith("send"):  # send <filename>
-            await channel.send("File sending in process.")
-            await channel.send(user_message[5::])
-            message_id = await self.get_message_id_by_content(str(channel), user_message[5::])
-            reference_message = await message.channel.fetch_message(message_id)
-            data_list = self.file_manager.split_file_data(file_data)
-            for i, chunk in enumerate(data_list):
-                file_data = discord.File(chunk, filename=f"{reference_message.content}{i}.txt")
-                await channel.send(content=f"Chunk {i + 1}:", file=file_data, reference=reference_message)
-            await channel.send("File sending complete.")
+            name = (user_message[5::])
+            await self.send_file_in_chat(name, file_data)
 
         elif user_message.startswith("get"):
-            await message.channel.send("File assembly in progress...")
-            file_name = user_message[4::]
-            message_id = await self.get_message_id_by_content(str(channel), file_name)
-            reference_message = await message.channel.fetch_message(message_id)
-            all_messages = []
-            async for msg in reference_message.channel.history(limit=None):
-                all_messages.append(msg)
-            reply_messages = [msg for msg in all_messages if msg.reference and msg.reference.message_id == message_id]
-            sorted_reply_messages = sorted(reply_messages, key=lambda msg: msg.created_at)
-            print(f"Type of sorted: {type(sorted_reply_messages)} type of [0] {type(sorted_reply_messages[0])}")
-            self.file_manager.assemble_file(sorted_reply_messages)
-            await message.channel.send("File assembly completed!")
+            message_id = await self.get_message_id_by_content(str(channel), user_message[4::])
+            await self.assemble_file_from_chat(message_id)
 
         elif user_message.startswith("LOG"):
             await message.channel.send("Logged the data in the console!")
@@ -98,7 +105,6 @@ class DiscordBot:
             sorted_reply_messages = sorted(reply_messages, key=lambda msg: msg.created_at)
             print(f"messages that replay to id: {message_id} are: {len(reply_messages)} TIME ELAPSED: {elapsed_time}")
 
-
     def run_discord_bot(self):
         @self.bot.event
         async def on_ready():
@@ -111,7 +117,6 @@ class DiscordBot:
         self.bot.run(self.token)
 
 
-# Usage
-TOKEN = "MTE4Mjk5MTE2MTg3NTQ5NzAyMQ.G_2_1U.jArN2b2YYPeVD_nNAIsj2J1G9llZ5poeh0STyk"
+TOKEN = ""
 bot_instance = DiscordBot(TOKEN)
 bot_instance.run_discord_bot()

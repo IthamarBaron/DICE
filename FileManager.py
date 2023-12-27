@@ -6,8 +6,7 @@ from typing import List
 
 
 class FileManager:
-    CHUNK = 25 * 1024 ** 2 # 25 MB
-    IDO = 2
+    CHUNK = 25 * 1024 ** 2  # 25 MB
 
     def __init__(self):
         pass
