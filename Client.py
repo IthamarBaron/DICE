@@ -71,4 +71,4 @@ class Client:
 if __name__ == "__main__":
     client = Client('LocalHost', 12345)
     client.connect_to_server()
-    client.send_file_to_server("test.txt")
+    client.send_file_to_server("VTOL.jpg")

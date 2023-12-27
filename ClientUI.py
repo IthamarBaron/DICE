@@ -55,10 +55,7 @@ class ClientUI:
         self.uploaded_file_path = file_path
         print(f"file Path: {file_path}")
 
-    """ thread = threading.Thread(target=client_instance.send_file_to_server, args=(self.uploaded_file_path,))
-        thread.start()                     client_instance.send_file_to_server(self.uploaded_file_path)"""
 
-    """ for i in range(1000):pass"""
     def send_data(self):
         start_time = time.time()
         thread = threading.Thread(target=client_instance.send_file_to_server, args=(self.uploaded_file_path,))
