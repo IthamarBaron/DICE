@@ -132,7 +132,13 @@ class DiscordBot:
             elapsed_time = time.time() - start_time
             await message.channel.send(f"File will be saved as: {available_file_name}")
             await message.channel.send(f"time elapsed {elapsed_time}")
+        elif user_message.lower().startswith("clear"):
+            all_messages = []
+            async for msg in message.channel.history(limit=int(user_message[6::])):
+                all_messages.append(msg)
 
+            for msg in all_messages:
+                await msg.delete()
 
     def run_discord_bot(self):
         @self.bot.event
