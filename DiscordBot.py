@@ -53,10 +53,9 @@ class DiscordBot:
         await self.bot.change_presence(activity=activity)
 
     async def send_file_in_chat(self, file_name, file_content, channel_id=1182998507460771890):
-        print("i was called!")
         try:
-            if isinstance(channel_id, int):
-                channel = self.bot.get_channel(channel_id)
+            file_name = await self.get_available_file_name(file_name, channel_id)
+            channel = self.bot.get_channel(channel_id)
             await channel.send("File sending in process.")
             await channel.send(file_name)
             message_id = await self.get_message_id_by_content(str(channel), file_name)
