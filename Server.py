@@ -91,6 +91,6 @@ class Server:
 
 
 if __name__ == "__main__":
-    server = Server('LocalHost', 12345,"MTE4Mjk5MTE2MTg3NTQ5NzAyMQ.GoCPam.3mR8XEhluS_g71W8ap0ssjMysc3dvYZOdvREZs")
+    server = Server('LocalHost', 12345,"")
     server.start()
     server.receive_and_send_to_discord()
