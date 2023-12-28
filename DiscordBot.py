@@ -1,4 +1,5 @@
 import io
+import re
 import time
 import discord
 import requests
@@ -16,6 +17,24 @@ class DiscordBot:
         self.intents.message_content = True
         self.bot = discord.Client(intents=self.intents)
         self.file_manager = FileManager()
+
+    async def get_available_file_name(self, file_name, channel_id=1182998507460771890):
+        channel = self.bot.get_channel(channel_id)
+        all_messages = set()
+        async for msg in channel.history(limit=None):
+            if not msg.reference:  # Check if the message is not a reply
+                all_messages.add(msg.content)
+
+        found_valid_name = False
+        i = 1
+        available_name = file_name
+        while not found_valid_name:
+            if available_name in all_messages:
+                available_name = file_name+f"({i})"
+                i += 1
+            else:
+                found_valid_name = True
+        return available_name
 
     async def get_message_id_by_content(self, channel_name: str, message_content: str) -> int:
         guild = self.bot.guilds[0]
@@ -83,16 +102,16 @@ class DiscordBot:
         file_data = file.read()
         file.close()
 
-        # Check if the message is "send" or "get"
-        if user_message.startswith("send"):  # send <filename>
+        # message command
+        if user_message.lower().startswith("send"):  # send <filename>
             name = (user_message[5::])
             await self.send_file_in_chat(name, file_data)
 
-        elif user_message.startswith("get"):
+        elif user_message.lower().startswith("get"):
             message_id = await self.get_message_id_by_content(str(channel), user_message[4::])
             await self.assemble_file_from_chat(message_id)
 
-        elif user_message.startswith("LOG"):
+        elif user_message.lower().startswith("log"):
             await message.channel.send("Logged the data in the console!")
             message_id = await self.get_message_id_by_content(str(channel), "168mb")
             reference_message = await message.channel.fetch_message(message_id)
@@ -106,6 +125,15 @@ class DiscordBot:
             sorted_reply_messages = sorted(reply_messages, key=lambda msg: msg.created_at)
             print(f"messages that replay to id: {message_id} are: {len(reply_messages)} TIME ELAPSED: {elapsed_time}")
 
+        elif user_message.lower().startswith("ca"):
+            await message.channel.send("Checking Availability!")
+            start_time = time.time()
+            available_file_name = await self.get_available_file_name(user_message[3::])
+            elapsed_time = time.time() - start_time
+            await message.channel.send(f"File will be saved as: {available_file_name}")
+            await message.channel.send(f"time elapsed {elapsed_time}")
+
+
     def run_discord_bot(self):
         @self.bot.event
         async def on_ready():
@@ -118,3 +146,5 @@ class DiscordBot:
         self.bot.run(self.token)
 
 
+bot = DiscordBot("")
+bot.run_discord_bot()
