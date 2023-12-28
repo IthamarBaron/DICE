@@ -3,6 +3,7 @@ import time
 import tkinter as tk
 from tkinter import filedialog
 from Client import Client
+from tkinter import PhotoImage
 
 BACKGROUND_COLOR = "#00274C"
 client_instance = Client('LocalHost', 12345)
@@ -19,9 +20,12 @@ class ServerConnectionUI:
         large_text_label = tk.Label(self.root, text="CONNECT TO SERVER", font=("Arial", 24, "bold"), bg=BACKGROUND_COLOR, fg="white")
         large_text_label.pack(pady=20)
 
-        # Image Placeholder
-        image_label = tk.Label(self.root, text="Image Placeholder", bg=BACKGROUND_COLOR, fg="white")
-        image_label.pack(pady=20)
+        # Load your image
+        image_path = "server_connection_icon.png"  # Replace with the actual path to your image
+        self.image = PhotoImage(master = self.root, width=200, height=100, file=image_path)
+
+        image_label = tk.Label(self.root, image=self.image, bg=BACKGROUND_COLOR)
+        image_label.pack(pady=(20, 0))
 
         # String Input Field
         self.entry = tk.Entry(self.root, font=('Arial', 14), fg="white", bg="#D3D3D3", bd=3, relief="solid", insertbackground="black")
@@ -32,6 +36,11 @@ class ServerConnectionUI:
         connect_button = tk.Button(self.root, text="Connect", command=self.connect_to_server, bg="#4CAF50", fg="black", bd=2, relief="solid", width=15, height=2)
         connect_button.pack(pady=20)
 
+        # labels
+        label_dice = tk.Label(self.root, text="DICE", font=("Rubik", 10,"bold","underline"), fg="white", bg=BACKGROUND_COLOR)
+        label_description = tk.Label(self.root, text="~Discord Integrated Cryptographic Engine",font=("Rubik", 9,"bold"), fg="white", bg=BACKGROUND_COLOR)
+        label_description.pack(side=tk.BOTTOM, anchor=tk.W)
+        label_dice.pack(side=tk.BOTTOM, anchor=tk.W)
 
     def get_ip(self):
         ip = self.entry.get()
