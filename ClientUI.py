@@ -4,23 +4,42 @@ import tkinter as tk
 from tkinter import filedialog
 from Client import Client
 
+BACKGROUND_COLOR = "#00274C"
 client_instance = Client('LocalHost', 12345)
 class ServerConnectionUI:
-    def __init__(self, root, client_ui):
+    def __init__(self, root: tk.Tk, client_ui):
         self.root = root
-        self.client_ui = client_ui
+        self.root.geometry("500x400")
+        self.root.title("Connect to Server")
 
-        root.title("Connect to Server")
+        self.root = tk.Frame(self.root, bg=BACKGROUND_COLOR)
+        self.root.pack(expand=True, fill=tk.BOTH)
 
-        # Create and place the title label
-        self.title_label = tk.Label(root, text="Connect to Server", font=("Arial", 16))
-        self.title_label.pack(pady=10)
+        # Large Text Label
+        large_text_label = tk.Label(self.root, text="CONNECT TO SERVER", font=("Arial", 24, "bold"), bg=BACKGROUND_COLOR, fg="white")
+        large_text_label.pack(pady=20)
 
-        # Create and place the connect button
-        self.connect_button = tk.Button(root, text="Connect", command=self.connect_to_server)
-        self.connect_button.pack(pady=20)
+        # Image Placeholder
+        image_label = tk.Label(self.root, text="Image Placeholder", bg=BACKGROUND_COLOR, fg="white")
+        image_label.pack(pady=20)
+
+        # String Input Field
+        self.entry = tk.Entry(self.root, font=('Arial', 14), fg="white", bg="#D3D3D3", bd=3, relief="solid", insertbackground="black")
+        self.entry.insert(0, "ENTER IP")
+        self.entry.pack(pady=20)
+
+        # Connect Button
+        connect_button = tk.Button(self.root, text="Connect", command=self.connect_to_server, bg="#4CAF50", fg="black", bd=2, relief="solid", width=15, height=2)
+        connect_button.pack(pady=20)
+
+
+    def get_ip(self):
+        ip = self.entry.get()
+        print(ip)
 
     def connect_to_server(self):
+        ip = self.entry.get()
+        print(ip)
         client_instance.connect_to_server()
 
         self.root.destroy()
