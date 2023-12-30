@@ -8,6 +8,7 @@ import DiscordBot
 import threading
 
 class Server:
+
     def __init__(self, host, port, token):
         self.host = host
         self.port = port
@@ -98,15 +99,24 @@ class Server:
         signup_data = data.split("|")
 
         if not self.database.is_username_availability(signup_data[0]):
-            #  TODO: Alert user
-            print("Username unabailable")
+            print("Username unavailable")
+            data = "noooooooooooooooooo" #  hahaha i am 19 chars long
+            data = f"{data}"
+            self.client_socket.send(data.encode())
             pass
         else:
             print("username available")
             temp = asyncio.run_coroutine_threadsafe(self.bot_instance.create_new_storage_area(signup_data[0]), self.bot_instance.bot.loop)
             channel_id = temp.result()
             print(channel_id)
+            data = f"{channel_id}"
+            self.client_socket.send(data.encode())
 
+    @staticmethod
+    def zero_fill_length(input_string, width=4):
+        length = len(input_string)
+        length_str = str(length).zfill(width)
+        return length_str
 
 
 

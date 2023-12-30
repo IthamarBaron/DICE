@@ -105,10 +105,10 @@ class ManagerUI:
         username_label = tk.Label(self.current_frame, text="Name", font=("Arial", 12, "bold"), bg=BACKGROUND_COLOR, fg="black")
         username_label.pack(side=tk.TOP, padx=20, pady=(0, 0))
 
-        username_entry = tk.Entry(self.current_frame, bg="#D3D3D3", fg="#1f1f1f", bd=2, insertbackground="black", width=45
+        self.username_entry = tk.Entry(self.current_frame, bg="#D3D3D3", fg="#1f1f1f", bd=2, insertbackground="black", width=45
                                   , relief=tk.SOLID,)
-        username_entry.insert(0, "Enter username")
-        username_entry.pack(side=tk.TOP, padx=20, pady=(0, 10), ipady=5)
+        self.username_entry.insert(0, "Enter username")
+        self.username_entry.pack(side=tk.TOP, padx=20, pady=(0, 10), ipady=5)
 
 
         # Password Section
@@ -116,9 +116,9 @@ class ManagerUI:
                                   fg="black")
         password_label.pack(side=tk.TOP, padx=20, pady=(0, 0))
 
-        password_entry = tk.Entry(self.current_frame, show="*", bg="#D3D3D3", fg="#1f1f1f", bd=2, insertbackground="black",
+        self.password_entry = tk.Entry(self.current_frame, show="*", bg="#D3D3D3", fg="#1f1f1f", bd=2, insertbackground="black",
                                   width=45, relief=tk.SOLID)
-        password_entry.pack(side=tk.TOP, padx=20, pady=(0, 10), ipady=5)
+        self.password_entry.pack(side=tk.TOP, padx=20, pady=(0, 10), ipady=5)
 
         # Buttons
         signup_button = tk.Button(self.current_frame, text="Sign Up", bg="#14427d", fg="white", bd=3,
@@ -141,7 +141,14 @@ class ManagerUI:
         pass
 
     def signup(self):
-        pass
+        username = self.username_entry.get()
+        password = self.password_entry.get()
+        is_successful = self.client_instance.request_signup(username, password)
+        if is_successful:
+            print("SIGNED UP GOOD")
+        else:
+            print("Failed to sign up")
+
 
 
 def main():

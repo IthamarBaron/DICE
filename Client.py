@@ -1,12 +1,13 @@
 import os
 import socket
-import time
+from DatabaseManager import Database
 
 
 class Client:
     def __init__(self, host, port):
         self.host = host
         self.port = port
+        self.database = Database("Dice-Database.db")
 
     def connect_to_server(self) -> None:
         """
@@ -25,25 +26,16 @@ class Client:
         except Exception as e:
             print(f"Connection error: {str(e)}")
 
-    def send_data(self, data, need_encode=True, sendall=False) -> None:
-        """
-        Send data to the connected server.
-
-        This method sends the specified data to the server through the client socket.
-
-        :param data: The data to be sent.
-        :param need_encode: Flag indicating whether the data should be encoded (default is True).
-        :param sendall: Flag indicating whether to use sendall method for sending all data at once (default is False).
-        """
+    def receive_data(self):
         try:
-            if sendall:
-                self.client_socket.sendall(data)
-            elif need_encode:
-                self.client_socket.send((str(data)).encode())
-            elif not sendall and not need_encode:
-                self.client_socket.send(data)
+            packetID = self.client_socket.recv(1).decode()
+            print(f"packetID {packetID}")
+            data_length = self.client_socket.recv(4).decode()
+            print(f"data_length {data_length}")
+            if int(packetID) == 1:
+                pass
         except Exception as e:
-            print(f"Error sending data to the server: {e}")
+            print(f"Error receiving data: {e}")
 
     def send_file_to_server(self, file_path: str) -> None:
         """
@@ -71,6 +63,16 @@ class Client:
         data = f"{1}{Client.zero_fill_length(data)}{data}".encode()
         self.client_socket.send(data)
 
+        response = self.client_socket.recv(19).decode()
+        if response.startswith("no"):
+            return False
+        else:
+            self.database.create_new_account(username, password, int(response))
+            return True
+
+
+
+
     @staticmethod
     def zero_fill_length(input_string, width=4):
         length = len(input_string)
@@ -82,4 +84,3 @@ class Client:
 if __name__ == "__main__":
     client = Client('LocalHost', 12345)
     client.connect_to_server()
-    client.send_file_to_server("VTOL.jpg")

@@ -22,8 +22,16 @@ class Database:
             return False
         return True
 
+    def create_new_account(self, username, password, channel_id):
+        try:
+            self.cursor.execute(f"INSERT INTO users VALUES ('{username}', '{password}', '{channel_id}')")
+        except Exception as e:
+            print(f"Error creating a new account: {e}")
+        finally:
+            self.conn.commit()
+            self.conn.close()
 
-    def attempt_signup(self,username,password):
-        pass
+
+
 
 
