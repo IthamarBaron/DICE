@@ -87,7 +87,8 @@ class Server:
 
     def receive_and_send_to_discord(self):
         file_data = self.receive_file()  # fil name | file content
-        self.send_files_to_discord(file_data[0], file_data[1])
+        if file_data[1]:
+            self.send_files_to_discord(file_data[0], file_data[1])
 
 
 if __name__ == "__main__":
