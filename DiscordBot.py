@@ -141,5 +141,5 @@ class DiscordBot:
         self.bot.run(self.token)
 
 
-bot = DiscordBot("")
-bot.run_discord_bot()
+"""bot = DiscordBot("")
+bot.run_discord_bot()"""

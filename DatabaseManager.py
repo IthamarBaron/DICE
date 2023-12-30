@@ -1,8 +1,29 @@
 import sqlite3
+class Database:
 
-conn = sqlite3.connect('Dice-Database.db')
-cursor = conn.cursor()
+    def __init__(self, db_name):
+        self.conn = sqlite3.connect(db_name)
+        self.cursor = self.conn.cursor()
 
 
-conn.commit()
-conn.close()
+    def attempt_login(self, username, password):
+        try:
+            self.cursor.execute(f"SELECT * FROM users WHERE username='{username}' AND password='{password}'")
+            row = self.cursor.fetchone()
+            return row
+        except Exception as e:
+            print(f"Error during login: {e}")
+
+
+    def is_username_availability(self,username):
+        self.cursor.execute(f"SELECT * FROM users WHERE username='{username}'")
+        row = self.cursor.fetchone()
+        if row:
+            return False
+        return True
+
+
+    def attempt_signup(self,username,password):
+        pass
+
+

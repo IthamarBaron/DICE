@@ -52,7 +52,6 @@ class Client:
         This method sends the file name, file size, and file data to the server.
         :param file_path: The path of the file to send.
         """
-        start_time = time.time()
         file_name = os.path.basename(file_path)
 
         file = open(file_path, "rb")
@@ -60,12 +59,24 @@ class Client:
         file_data = file.read()
         file.close()
 
-        self.send_data(file_name)
-        self.send_data(file_size)
-        self.send_data(file_data, sendall=True)
-        self.send_data(b"[END]", need_encode=False)
-        elapsed_time = time.time() - start_time
-        print(f"Time elapsed in send_file_to_server : {elapsed_time}")
+        file_info = f"{file_name}|{file_size}"
+        data = f"{2}{Client.zero_fill_length(file_info)}{file_info}".encode()
+        print(f"{2}{Client.zero_fill_length(file_info)}{file_info} FILEDATA[END]]")
+        self.client_socket.sendall(data)
+        self.client_socket.sendall(file_data)
+        self.client_socket.send(b"[END]")
+
+    def request_signup(self, username, password):
+        data = f"{username}|{password}"
+        data = f"{1}{Client.zero_fill_length(data)}{data}".encode()
+        self.client_socket.send(data)
+
+    @staticmethod
+    def zero_fill_length(input_string, width=4):
+        length = len(input_string)
+        length_str = str(length).zfill(width)
+        return length_str
+
 
 
 if __name__ == "__main__":
