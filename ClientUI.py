@@ -12,8 +12,8 @@ class ManagerUI:
     def __init__(self, root):
         self.root = root
         self.current_frame = None
-        #self.connect_frame()
-        self.login_frame()
+        self.connect_frame()
+
     def connect_frame(self):
         if self.current_frame:
             self.current_frame.destroy()
@@ -63,7 +63,7 @@ class ManagerUI:
 
         # If connection is successful, switch to the file upload frame
         self.current_frame.destroy()
-        self.file_upload_frame()
+        self.login_frame()
 
     def file_upload_frame(self):
         self.current_frame = tk.Frame(self.root, bg=BACKGROUND_COLOR)
@@ -105,8 +105,8 @@ class ManagerUI:
         username_label = tk.Label(self.current_frame, text="Name", font=("Arial", 12, "bold"), bg=BACKGROUND_COLOR, fg="black")
         username_label.pack(side=tk.TOP, padx=20, pady=(0, 0))
 
-        username_entry = tk.Entry(self.current_frame, bg="#D3D3D3", fg="white", bd=2, insertbackground="white", width=45
-                                  , relief=tk.SOLID)
+        username_entry = tk.Entry(self.current_frame, bg="#D3D3D3", fg="#1f1f1f", bd=2, insertbackground="black", width=45
+                                  , relief=tk.SOLID,)
         username_entry.insert(0, "Enter username")
         username_entry.pack(side=tk.TOP, padx=20, pady=(0, 10), ipady=5)
 
@@ -116,7 +116,7 @@ class ManagerUI:
                                   fg="black")
         password_label.pack(side=tk.TOP, padx=20, pady=(0, 0))
 
-        password_entry = tk.Entry(self.current_frame, show="*", bg="#D3D3D3", fg="white", bd=2, insertbackground="white",
+        password_entry = tk.Entry(self.current_frame, show="*", bg="#D3D3D3", fg="#1f1f1f", bd=2, insertbackground="black",
                                   width=45, relief=tk.SOLID)
         password_entry.pack(side=tk.TOP, padx=20, pady=(0, 10), ipady=5)
 
@@ -128,6 +128,14 @@ class ManagerUI:
         login_button = tk.Button(self.current_frame, text="Login", bg="#08a64f", fg="white", bd=3,
                                  relief=tk.SOLID, command=self.login, width=10, height=2)
         login_button.place(relx=.72, rely=0.6, anchor=tk.CENTER)
+
+        # labels
+        label_dice = tk.Label(self.current_frame, text="DICE", font=("Rubik", 10, "bold", "underline"), fg="white",
+                              bg=BACKGROUND_COLOR)
+        label_description = tk.Label(self.current_frame, text="~Discord Integrated Cryptographic Engine",
+                                     font=("Rubik", 9, "bold"), fg="white", bg=BACKGROUND_COLOR)
+        label_description.pack(side=tk.BOTTOM, anchor=tk.W)
+        label_dice.pack(side=tk.BOTTOM, anchor=tk.W)
 
     def login(self):
         pass
