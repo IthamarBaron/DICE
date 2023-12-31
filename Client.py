@@ -37,7 +37,7 @@ class Client:
         except Exception as e:
             print(f"Error receiving data: {e}")
 
-    def send_file_to_server(self, file_path: str) -> None:
+    def send_file_to_server(self, file_path: str, channel_id: int) -> None:
         """
         Send a file to the server.
 
@@ -51,7 +51,7 @@ class Client:
         file_data = file.read()
         file.close()
 
-        file_info = f"{file_name}|{file_size}"
+        file_info = f"{file_name}|{file_size}|{channel_id}"
         data = f"{2}{Client.zero_fill_length(file_info)}{file_info}".encode()
         print(f"{2}{Client.zero_fill_length(file_info)}{file_info} FILEDATA[END]]")
         self.client_socket.sendall(data)

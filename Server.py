@@ -59,6 +59,7 @@ class Server:
 
             file_name = file_info[0]
             file_size = int(file_info[1])
+            channel_id = int(file_info[2])
 
             print(f"Receiving file: {file_name} of size: {file_size / (1024 ** 2):.2f} MB")
 
@@ -75,24 +76,23 @@ class Server:
                     file_bytes += part_of_file
 
                 progress.update(1024 / (1024 ** 2))
-            return [file_name,file_bytes]
+            return [file_name, file_bytes, channel_id]
         except Exception as e:
             print(f"Error receive file: {e}")
         return [0, 0]
 
-    def send_files_to_discord(self,file_name, file_content, client_id=1182998507460771890):
+    def send_files_to_discord(self,file_name, file_content, channel_id):
 
         #  TODO: when connecting to database assign a a channel ID to the client_id
-        channel_id = client_id
         print(f"Sending file [{file_name}] in channel [{self.bot_instance.bot.get_channel(channel_id)}]")
         temp = asyncio.run_coroutine_threadsafe(self.bot_instance.send_file_in_chat(file_name, file_content, channel_id), self.bot_instance.bot.loop)
         temp.result()
 
     def handle_file_and_send_to_discord(self,data_length):
 
-        file_data = self.receive_file(data_length)  # fil name | file content
+        file_data = self.receive_file(data_length)  # fil name | file content | channelID
         if file_data[1]:
-            self.send_files_to_discord(file_data[0], file_data[1])
+            self.send_files_to_discord(file_data[0], file_data[1], file_data[2])
 
     def handle_sign_up_request(self,data_length):
         data = self.client_socket.recv(int(data_length)).decode()
@@ -126,4 +126,5 @@ class Server:
 if __name__ == "__main__":
     server = Server('LocalHost', 12345, "")
     server.start()
-    server.receive_data()
+    while True:
+        server.receive_data()

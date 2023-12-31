@@ -12,6 +12,8 @@ class ManagerUI:
     def __init__(self, root):
         self.root = root
         self.current_frame = None
+        self.user_data = None
+        self.client_instance = None
         self.connect_frame()
 
     def connect_frame(self):
@@ -63,7 +65,7 @@ class ManagerUI:
 
         # If connection is successful, switch to the file upload frame
         self.current_frame.destroy()
-        self.login_frame()
+        self.login_signup_frame()
 
     def file_upload_frame(self):
         self.current_frame = tk.Frame(self.root, bg=BACKGROUND_COLOR)
@@ -85,11 +87,12 @@ class ManagerUI:
         self.uploded_file_path = filedialog.askopenfilename()
 
     def send_data(self):
-        thread = threading.Thread(target=self.client_instance.send_file_to_server, args=(self.uploded_file_path,))
+        thread = threading.Thread(target=self.client_instance.send_file_to_server,
+                                  args=(self.uploded_file_path,self.user_data[2]))
         thread.start()
         pass
 
-    def login_frame(self):
+    def login_signup_frame(self):
         if self.current_frame:
             self.current_frame.destroy()
 
@@ -98,7 +101,7 @@ class ManagerUI:
         self.root.geometry("500x400")
 
         # Title
-        title_label = tk.Label(self.current_frame, text="LOG IN", font=("Rubik",25,"bold"), bg=BACKGROUND_COLOR, fg="white")
+        title_label = tk.Label(self.current_frame, text="LOG IN/SIGN UP", font=("Rubik",25,"bold"), bg=BACKGROUND_COLOR, fg="white")
         title_label.pack(side=tk.TOP, pady=20)
 
         # Username Section
@@ -138,14 +141,26 @@ class ManagerUI:
         label_dice.pack(side=tk.BOTTOM, anchor=tk.W)
 
     def login(self):
-        pass
+        username = self.username_entry.get()
+        password = self.password_entry.get()
+        print(f"attempting login as {username} with {password}")
+        login_data = self.client_instance.database.attempt_login(username, password)
+        if login_data:
+            self.user_data = login_data
+            print(f"userdata: {self.user_data}")
+            #  if login is succsefull we move on to the app
+            self.current_frame.destroy()
+            self.file_upload_frame()
+        else:
+            #TODO: ALERT CLIENT ABOUT FAILED LOGIN
+            pass
 
     def signup(self):
         username = self.username_entry.get()
         password = self.password_entry.get()
         is_successful = self.client_instance.request_signup(username, password)
         if is_successful:
-            print("SIGNED UP GOOD")
+            self.login()
         else:
             print("Failed to sign up")
 

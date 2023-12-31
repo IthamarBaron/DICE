@@ -10,14 +10,15 @@ class Database:
         try:
             self.cursor.execute(f"SELECT * FROM users WHERE username='{username}' AND password='{password}'")
             row = self.cursor.fetchone()
+            self.conn.commit()
             return row
         except Exception as e:
             print(f"Error during login: {e}")
 
-
     def is_username_availability(self,username):
         self.cursor.execute(f"SELECT * FROM users WHERE username='{username}'")
         row = self.cursor.fetchone()
+        self.conn.commit()
         if row:
             return False
         return True
@@ -29,7 +30,6 @@ class Database:
             print(f"Error creating a new account: {e}")
         finally:
             self.conn.commit()
-            self.conn.close()
 
 
 
