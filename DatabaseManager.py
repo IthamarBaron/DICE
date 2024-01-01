@@ -51,3 +51,22 @@ class Database:
         finally:
             self.conn.commit()
 
+    def get_files_from_id(self, channel_id):
+        try:
+            self.cursor.execute(f"SELECT * FROM _{channel_id}")
+            files = self.cursor.fetchall()
+            self.conn.commit()
+            return files
+        except Exception as e:
+            print(f"Error getting files from id: {e}")
+            self.conn.commit()
+
+    def get_message_id_by_name(self, filename, channel_id):
+        try:
+            self.cursor.execute(f"SELECT * FROM _{channel_id} WHERE filename='{filename}'")
+            info = self.cursor.fetchone()
+            message_id = info[1]
+            self.conn.commit()
+        except Exception as e:
+            print(f"Error getting messageID: {e}")
+            self.conn.commit()

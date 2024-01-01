@@ -90,11 +90,13 @@ class DiscordBot:
             reply_messages = [msg for msg in all_messages if msg.reference and msg.reference.message_id == message_id]
             sorted_reply_messages = sorted(reply_messages, key=lambda msg: msg.created_at)
             print(f"Type of sorted: {type(sorted_reply_messages)} type of [0] {type(sorted_reply_messages[0])}")
-            self.file_manager.assemble_file(sorted_reply_messages)
+            file_bytes = self.file_manager.assemble_file(sorted_reply_messages)
             await channel.send("File assembly completed!")
+            return file_bytes
         except Exception as e:
             await channel.send("File assembly failed!")
             print(f"Error during file assembling: {e}")
+            return b""
 
     async def on_message(self, message: discord.Message):
         if message.author == self.bot.user:

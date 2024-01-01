@@ -15,6 +15,7 @@ class ManagerUI:
         self.user_data = None
         self.client_instance = None
         self.connect_frame()
+        self.users_files = {}
 
     def connect_frame(self):
         if self.current_frame:
@@ -68,6 +69,10 @@ class ManagerUI:
         self.login_signup_frame()
 
     def file_upload_frame(self):
+        print("A")
+        self.initiate_users_files()
+        print(self.users_files)
+
         self.current_frame = tk.Frame(self.root, bg=BACKGROUND_COLOR)
         self.root.title("File Upload")
 
@@ -83,13 +88,22 @@ class ManagerUI:
         self.send_button = tk.Button(self.root, text="Send", command=self.send_data)
         self.send_button.pack(pady=20)
 
+        for file_name in self.users_files.keys():
+            file_label = tk.Label(self.root, text=file_name)
+            file_label.pack()
+
+            download_button = tk.Button(self.root, text="Download",
+                                        command=lambda: self.download_file(file_name))
+            download_button.pack()
+
     def upload_file(self):
         self.uploded_file_path = filedialog.askopenfilename()
 
     def send_data(self):
         thread = threading.Thread(target=self.client_instance.send_file_to_server,
-                                  args=(self.uploded_file_path,self.user_data[2]))
+                                  args=(self.uploded_file_path, self.user_data[2]))
         thread.start()
+
         pass
 
     def login_signup_frame(self):
@@ -163,6 +177,24 @@ class ManagerUI:
             self.login()
         else:
             print("Failed to sign up")
+
+    def initiate_users_files(self):
+        files = self.client_instance.database.get_files_from_id(self.user_data[2])
+        for file in files:
+            self.users_files[file[0]] = file[1]
+
+    def instantiate_file_labels(self):
+        for file_name in self.users_files.keys():
+            file_label = tk.Label(self.current_frame, text=file_name)
+            file_label.pack()
+
+            download_button = tk.Button(self.current_frame, text="Download",
+                                        command=lambda: print(f"downloading"))
+            download_button.pack()
+
+    def download_file(self, filename):
+        thread = threading.Thread(target=self.client_instance.request_download_file, args=(filename, self.users_files[filename]))
+        thread.start()
 
 
 

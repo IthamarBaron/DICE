@@ -44,6 +44,8 @@ class Server:
                 self.handle_sign_up_request(data_length)
             elif int(packetID) == 2:
                 self.handle_file_and_send_to_discord(data_length)
+            elif int(packetID) == 3:
+                self.handle_file_request(data_length)
         except Exception as e:
             print(f"Error receiving data: {e}")
 
@@ -89,6 +91,17 @@ class Server:
         if reference_message_info:
             print(f"Message sent successfully")
             self.database.new_file_in_channel(reference_message_info[0], reference_message_info[1], channel_id)
+
+    def handle_file_request(self, data_length):
+        requested_file_info = self.client_socket.recv(data_length).decode()
+        requested_file_info = requested_file_info.split("|") #filename , channel_id
+
+        message_id = self.database.get_message_id_by_name(requested_file_info[0],requested_file_info[1])
+
+        temp = asyncio.run_coroutine_threadsafe(
+            self.bot_instance.assemble_file_from_chat(message_id, requested_file_info[1]), self.bot_instance.bot.loop)
+        file_bytes = temp.result()
+        print(file_bytes)
 
 
 

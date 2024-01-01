@@ -70,8 +70,10 @@ class Client:
             self.database.create_new_account(username, password, int(response))
             return True
 
-
-
+    def request_download_file(self, filename, channel_id):
+        data = f"{filename}|{channel_id}"
+        data = f"{3}{self.zero_fill_length(data)}{data}"
+        self.client_socket.send(data.encode())
 
     @staticmethod
     def zero_fill_length(input_string, width=4):
