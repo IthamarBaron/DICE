@@ -93,16 +93,17 @@ class Server:
             self.database.new_file_in_channel(reference_message_info[0], reference_message_info[1], channel_id)
 
     def handle_file_request(self, data_length):
-        requested_file_info = self.client_socket.recv(data_length).decode()
+        requested_file_info = self.client_socket.recv(int(data_length)).decode()
         requested_file_info = requested_file_info.split("|") #filename , channel_id
 
-        message_id = self.database.get_message_id_by_name(requested_file_info[0],requested_file_info[1])
-
-        temp = asyncio.run_coroutine_threadsafe(
-            self.bot_instance.assemble_file_from_chat(message_id, requested_file_info[1]), self.bot_instance.bot.loop)
-        file_bytes = temp.result()
-        print(file_bytes)
-
+        message_id = self.database.get_message_id_by_name(requested_file_info[0], int(requested_file_info[1]))
+        if message_id !=0:
+            temp = asyncio.run_coroutine_threadsafe(
+                self.bot_instance.assemble_file_from_chat(message_id, int(requested_file_info[1])), self.bot_instance.bot.loop)
+            file_bytes = temp.result()
+            print(file_bytes)
+        else:
+            print("message id is 0")
 
 
     def handle_file_and_send_to_discord(self,data_length):
