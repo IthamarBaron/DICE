@@ -83,10 +83,14 @@ class Server:
 
     def send_files_to_discord(self,file_name, file_content, channel_id):
 
-        #  TODO: when connecting to database assign a a channel ID to the client_id
         print(f"Sending file [{file_name}] in channel [{self.bot_instance.bot.get_channel(channel_id)}]")
         temp = asyncio.run_coroutine_threadsafe(self.bot_instance.send_file_in_chat(file_name, file_content, channel_id), self.bot_instance.bot.loop)
-        temp.result()
+        reference_message_info = temp.result()
+        if reference_message_info:
+            print(f"Message sent successfully")
+            self.database.new_file_in_channel(reference_message_info[0], reference_message_info[1], channel_id)
+
+
 
     def handle_file_and_send_to_discord(self,data_length):
 

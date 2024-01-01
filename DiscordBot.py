@@ -73,8 +73,10 @@ class DiscordBot:
                 file_data = discord.File(chunk, filename=f"{reference_message.content}{i}.txt")
                 await channel.send(content=f"Chunk {i + 1}:", file=file_data, reference=reference_message)
             await channel.send("File sending complete.")
+            return [file_name, message_id]
         except Exception as e:
             print(f"Error sending file in chat: {e}")
+            return None
 
     async def assemble_file_from_chat(self, message_id, channel_id=1182998507460771890):
         try:
