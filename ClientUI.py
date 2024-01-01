@@ -88,13 +88,7 @@ class ManagerUI:
         self.send_button = tk.Button(self.root, text="Send", command=self.send_data)
         self.send_button.pack(pady=20)
 
-        for file_name in self.users_files.keys():
-            file_label = tk.Label(self.root, text=file_name)
-            file_label.pack()
-
-            download_button = tk.Button(self.root, text="Download",
-                                        command=lambda: self.download_file(file_name))
-            download_button.pack()
+        self.instantiate_file_labels()
 
     def upload_file(self):
         self.uploded_file_path = filedialog.askopenfilename()
@@ -185,15 +179,15 @@ class ManagerUI:
 
     def instantiate_file_labels(self):
         for file_name in self.users_files.keys():
-            file_label = tk.Label(self.current_frame, text=file_name)
+            file_label = tk.Label(self.root, text=file_name)
             file_label.pack()
 
-            download_button = tk.Button(self.current_frame, text="Download",
-                                        command=lambda: print(f"downloading"))
+            download_button = tk.Button(self.root, text="Download",
+                                        command=lambda name=file_name: self.download_file(name))
             download_button.pack()
 
     def download_file(self, filename):
-        thread = threading.Thread(target=self.client_instance.request_download_file, args=(filename, self.users_files[filename]))
+        thread = threading.Thread(target=self.client_instance.request_download_file, args=(filename, int(self.user_data[2])))
         thread.start()
 
 

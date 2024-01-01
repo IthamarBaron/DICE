@@ -82,6 +82,8 @@ class DiscordBot:
         try:
             if isinstance(channel_id, int):
                 channel = self.bot.get_channel(channel_id)
+            else:
+                channel = self.bot.get_channel(int(channel_id))
             await channel.send("File assembly in progress...")
             reference_message = await channel.fetch_message(message_id)
             all_messages = []

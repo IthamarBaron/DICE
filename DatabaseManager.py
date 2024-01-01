@@ -67,6 +67,8 @@ class Database:
             info = self.cursor.fetchone()
             message_id = info[1]
             self.conn.commit()
+            return int(message_id)
         except Exception as e:
             print(f"Error getting messageID: {e}")
             self.conn.commit()
+            return 0
