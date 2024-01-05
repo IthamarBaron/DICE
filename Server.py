@@ -97,11 +97,15 @@ class Server:
         requested_file_info = requested_file_info.split("|") #filename , channel_id
 
         message_id = self.database.get_message_id_by_name(requested_file_info[0], int(requested_file_info[1]))
-        if message_id !=0:
+        if message_id != 0:
             temp = asyncio.run_coroutine_threadsafe(
                 self.bot_instance.assemble_file_from_chat(message_id, int(requested_file_info[1])), self.bot_instance.bot.loop)
             file_bytes = temp.result()
-            print(file_bytes)
+            file_info = f"{requested_file_info[0]}|{len(file_bytes)}"
+            data = f"{2}{self.zero_fill_length(file_info)}{file_info}".encode()
+            self.client_socket.sendall(data)
+            self.client_socket.sendall(file_bytes)
+            self.client_socket.send(b"[END]")
         else:
             print("message id is 0")
 
@@ -118,7 +122,8 @@ class Server:
 
         if not self.database.is_username_availability(signup_data[0]):
             print("Username unavailable")
-            data = "noooooooooooooooooo" #  hahaha i am 19 chars long
+            #  hahaha i am 19 chars long
+            data = "noooooooooooooooooo"
             data = f"{data}"
             self.client_socket.send(data.encode())
             pass

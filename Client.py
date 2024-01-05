@@ -1,4 +1,5 @@
 import os
+import time
 import socket
 from DatabaseManager import Database
 
@@ -8,6 +9,8 @@ class Client:
         self.host = host
         self.port = port
         self.database = Database("Dice-Database.db")
+        self.temp_start_time = None
+        self.temp_end_time = None
 
     def connect_to_server(self) -> None:
         """
@@ -28,14 +31,46 @@ class Client:
 
     def receive_data(self):
         try:
+            print("receive data called!")
             packetID = self.client_socket.recv(1).decode()
             print(f"packetID {packetID}")
             data_length = self.client_socket.recv(4).decode()
             print(f"data_length {data_length}")
             if int(packetID) == 1:
                 pass
+            if int(packetID) ==2:
+                self.get_files_from_server(data_length)
         except Exception as e:
             print(f"Error receiving data: {e}")
+
+
+    def get_files_from_server(self, data_length):
+        try:
+            file_info = self.client_socket.recv(int(data_length)).decode()
+            file_info = file_info.split("|")
+
+            file_name = file_info[0]
+            file_size = int(file_info[1])
+            print(f"Receiving file: {file_name} of size: {file_size / (1024 ** 2):.2f} MB")
+
+            file_bytes = b""
+            done_receiving = False
+            while not done_receiving:
+                if file_bytes[-5:] == b'[END]':
+                    done_receiving = True
+                else:
+                    part_of_file = self.client_socket.recv(1024)
+                    file_bytes += part_of_file
+
+            with open(f"RECEIVIED_{file_name}", 'wb') as file:
+                file.write(file_bytes)
+                file.close()
+            self.temp_end_time = time.time()
+            delta_time = int(self.temp_end_time - self.temp_start_time)
+            print(f"time time elapsed: {delta_time}")
+            print(f"Download average speed: {(file_size / (1024 ** 2))/delta_time}")
+        except Exception as e:
+            print(f"Error receive file: {e}")
 
     def send_file_to_server(self, file_path: str, channel_id: int) -> None:
         """
@@ -71,9 +106,11 @@ class Client:
             return True
 
     def request_download_file(self, filename, channel_id):
+        self.temp_start_time = time.time()
         data = f"{filename}|{channel_id}"
         data = f"{3}{self.zero_fill_length(data)}{data}"
         self.client_socket.send(data.encode())
+        self.receive_data()
 
     @staticmethod
     def zero_fill_length(input_string, width=4):
