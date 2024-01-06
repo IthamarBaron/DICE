@@ -65,23 +65,17 @@ class Server:
 
             print(f"Receiving file: {file_name} of size: {file_size / (1024 ** 2):.2f} MB")
 
-            warnings.simplefilter("ignore", tqdm.TqdmWarning)
-            progress = tqdm.tqdm(unit="MB", unit_scale=True, unit_divisor=1024, total=file_size/(1024 ** 2), position=0)
-
             file_bytes = b""
-            done_receiving = False
-            while not done_receiving:
-                if file_bytes[-5:] == b'[END]':
-                    done_receiving = True
-                else:
-                    part_of_file = self.client_socket.recv(1024)
-                    file_bytes += part_of_file
-
-                progress.update(1024 / (1024 ** 2))
+            while len(file_bytes) != file_size:
+                part_of_file = self.client_socket.recv(file_size - len(file_bytes))
+                if not len(part_of_file):
+                    print("Connection lost")
+                    return [0, 0, 0]
+                file_bytes += part_of_file
             return [file_name, file_bytes, channel_id]
         except Exception as e:
             print(f"Error receive file: {e}")
-        return [0, 0]
+        return [0, 0, 0]
 
     def send_files_to_discord(self,file_name, file_content, channel_id):
 
@@ -105,7 +99,6 @@ class Server:
             data = f"{2}{self.zero_fill_length(file_info)}{file_info}".encode()
             self.client_socket.sendall(data)
             self.client_socket.sendall(file_bytes)
-            self.client_socket.send(b"[END]")
         else:
             print("message id is 0")
 

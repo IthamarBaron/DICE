@@ -53,18 +53,17 @@ class Client:
             file_size = int(file_info[1])
             print(f"Receiving file: {file_name} of size: {file_size / (1024 ** 2):.2f} MB")
 
-            file_bytes = b""
-            done_receiving = False
-            while not done_receiving:
-                if file_bytes[-5:] == b'[END]':
-                    done_receiving = True
-                else:
-                    part_of_file = self.client_socket.recv(1024)
-                    file_bytes += part_of_file
+            received_bytes_count = 0
+            file = open(f"received_{file_name}",'wb')
+            while received_bytes_count != file_size:
+                part_of_file = self.client_socket.recv(file_size - received_bytes_count)
+                if not len(part_of_file):
+                    print("Connection lost")
+                    #TODO: do something about this
+                file.write(part_of_file)
+                received_bytes_count += len(part_of_file)
+            file.close()
 
-            with open(f"RECEIVIED_{file_name}", 'wb') as file:
-                file.write(file_bytes)
-                file.close()
             self.temp_end_time = time.time()
             delta_time = int(self.temp_end_time - self.temp_start_time)
             print(f"time time elapsed: {delta_time}")
@@ -88,10 +87,9 @@ class Client:
 
         file_info = f"{file_name}|{file_size}|{channel_id}"
         data = f"{2}{Client.zero_fill_length(file_info)}{file_info}".encode()
-        print(f"{2}{Client.zero_fill_length(file_info)}{file_info} FILEDATA[END]]")
+        print(f"{2}{Client.zero_fill_length(file_info)}{file_info} FILEDATA")
         self.client_socket.sendall(data)
         self.client_socket.sendall(file_data)
-        self.client_socket.send(b"[END]")
 
     def request_signup(self, username, password):
         data = f"{username}|{password}"
