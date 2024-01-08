@@ -14,7 +14,7 @@ class Server:
         self.port = port
         self.database = Database("Dice-Database.db")
         self.bot_instance = DiscordBot.DiscordBot(token)
-        thread = threading.Thread(target=self.bot_instance.run_discord_bot)
+        thread = threading.Thread(target=self.bot_instance.run_discord_bot, daemon=True)
         thread.start()
 
     def start(self) -> None:
@@ -102,7 +102,6 @@ class Server:
         else:
             print("message id is 0")
 
-
     def handle_file_and_send_to_discord(self,data_length):
 
         file_data = self.receive_file(data_length)  # fil name | file content | channelID
@@ -133,10 +132,6 @@ class Server:
         length = len(input_string)
         length_str = str(length).zfill(width)
         return length_str
-
-
-
-
 
 
 if __name__ == "__main__":

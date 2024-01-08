@@ -43,7 +43,6 @@ class Client:
         except Exception as e:
             print(f"Error receiving data: {e}")
 
-
     def get_files_from_server(self, data_length):
         try:
             file_info = self.client_socket.recv(int(data_length)).decode()

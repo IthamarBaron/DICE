@@ -16,7 +16,7 @@ class ManagerUI:
         self.client_instance = None
         self.connect_frame()
         self.users_files = {}
-
+        self.display_files=[]
     def connect_frame(self):
         if self.current_frame:
             self.current_frame.destroy()
@@ -88,6 +88,10 @@ class ManagerUI:
         self.send_button = tk.Button(self.root, text="Send", command=self.send_data)
         self.send_button.pack(pady=20)
 
+        # reload button
+        self.reload_files_button = tk.Button(self.root, text="Refresh Files", command=self.reload_files)
+        self.reload_files_button.pack(anchor="se")
+
         self.instantiate_file_labels()
 
     def upload_file(self):
@@ -95,10 +99,15 @@ class ManagerUI:
 
     def send_data(self):
         thread = threading.Thread(target=self.client_instance.send_file_to_server,
-                                  args=(self.uploded_file_path, self.user_data[2]))
+                                  args=(self.uploded_file_path, self.user_data[2]), daemon=True)
         thread.start()
 
         pass
+
+    def reload_files(self):
+        self.clear_file_labels()
+        self.initiate_users_files()
+        self.instantiate_file_labels()
 
     def login_signup_frame(self):
         if self.current_frame:
@@ -185,6 +194,13 @@ class ManagerUI:
             download_button = tk.Button(self.root, text="Download",
                                         command=lambda name=file_name: self.download_file(name))
             download_button.pack()
+            self.display_files.append(download_button)
+            self.display_files.append(file_label)
+
+    def clear_file_labels(self):
+        for button in self.display_files:
+            button.destroy()
+        self.display_files = []
 
     def download_file(self, filename):
         thread = threading.Thread(target=self.client_instance.request_download_file, args=(filename, int(self.user_data[2])))
