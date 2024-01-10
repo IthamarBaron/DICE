@@ -140,6 +140,9 @@ class ManagerUI:
                                   width=45, relief=tk.SOLID)
         self.password_entry.pack(side=tk.TOP, padx=20, pady=(0, 10), ipady=5)
 
+        self.error_label = tk.Label(self.current_frame, text="", font=("Arial", 12, "bold"), fg="#cf3e3e",bg=BACKGROUND_COLOR)
+        self.error_label.pack()
+
         # Buttons
         signup_button = tk.Button(self.current_frame, text="Sign Up", bg="#14427d", fg="white", bd=3,
                                   command=self.signup, relief=tk.SOLID, width=10, height=2)
@@ -165,21 +168,24 @@ class ManagerUI:
         if login_data:
             self.user_data = login_data
             print(f"userdata: {self.user_data}")
-            #  if login is succsefull we move on to the app
+            #  if login is successful we move on to the app
             self.current_frame.destroy()
             self.file_upload_frame()
         else:
-            #TODO: ALERT CLIENT ABOUT FAILED LOGIN
+            self.error_label.config(text="Login Failed\ninvalid credentials")
             pass
 
     def signup(self):
         username = self.username_entry.get()
         password = self.password_entry.get()
+        if len(username) == 0 or len(password) == 0:
+            self.error_label.config(text="SignUp Failed\nFill both fields")
+            return
         is_successful = self.client_instance.request_signup(username, password)
         if is_successful:
             self.login()
         else:
-            print("Failed to sign up")
+            self.error_label.config(text="SignUp Failed\nName Is Taken")
 
     def initiate_users_files(self):
         files = self.client_instance.database.get_files_from_id(self.user_data[2])
