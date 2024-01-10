@@ -4,9 +4,8 @@ from tkinter import filedialog
 from tkinter import PhotoImage
 from Client import Client
 from tkinter import font
-
-
 BACKGROUND_COLOR = "#5f8ac2"
+
 
 class ManagerUI:
     def __init__(self, root):
@@ -17,6 +16,9 @@ class ManagerUI:
         self.connect_frame()
         self.users_files = {}
         self.display_files=[]
+
+    # region FRAMES
+
     def connect_frame(self):
         if self.current_frame:
             self.current_frame.destroy()
@@ -57,57 +59,6 @@ class ManagerUI:
                                      font=("Rubik", 9, "bold"), fg="white", bg=BACKGROUND_COLOR)
         label_description.pack(side=tk.BOTTOM, anchor=tk.W)
         label_dice.pack(side=tk.BOTTOM, anchor=tk.W)
-
-    def connect_to_server(self):
-        ip = self.entry.get()
-        print(f"Attempting to connect to: {ip}")
-        self.client_instance = Client(ip, 12345)
-        self.client_instance.connect_to_server()
-
-        # If connection is successful, switch to the file upload frame
-        self.current_frame.destroy()
-        self.login_signup_frame()
-
-    def file_upload_frame(self):
-        print("A")
-        self.initiate_users_files()
-        print(self.users_files)
-
-        self.current_frame = tk.Frame(self.root, bg=BACKGROUND_COLOR)
-        self.root.title("File Upload")
-
-        # title
-        self.title_label = tk.Label(self.root, text="Welcome to Dice", font=("Arial", 16))
-        self.title_label.pack(pady=10)
-
-        # file upload button
-        self.upload_button = tk.Button(self.root, text="Upload File", command=self.upload_file)
-        self.upload_button.pack(pady=20)
-
-        # send button
-        self.send_button = tk.Button(self.root, text="Send", command=self.send_data)
-        self.send_button.pack(pady=20)
-
-        # reload button
-        self.reload_files_button = tk.Button(self.root, text="Refresh Files", command=self.reload_files)
-        self.reload_files_button.pack(anchor="se")
-
-        self.instantiate_file_labels()
-
-    def upload_file(self):
-        self.uploded_file_path = filedialog.askopenfilename()
-
-    def send_data(self):
-        thread = threading.Thread(target=self.client_instance.send_file_to_server,
-                                  args=(self.uploded_file_path, self.user_data[2]), daemon=True)
-        thread.start()
-
-        pass
-
-    def reload_files(self):
-        self.clear_file_labels()
-        self.initiate_users_files()
-        self.instantiate_file_labels()
 
     def login_signup_frame(self):
         if self.current_frame:
@@ -160,6 +111,56 @@ class ManagerUI:
         label_description.pack(side=tk.BOTTOM, anchor=tk.W)
         label_dice.pack(side=tk.BOTTOM, anchor=tk.W)
 
+    def main_application_frame(self):
+
+        self.initiate_users_files()
+        print(self.users_files)
+
+        self.current_frame = tk.Frame(self.root, bg=BACKGROUND_COLOR)
+        self.root.title("File Upload")
+
+        # title
+        self.title_label = tk.Label(self.root, text="Welcome to Dice", font=("Arial", 16))
+        self.title_label.pack(pady=10)
+
+        # file upload button
+        self.upload_button = tk.Button(self.root, text="Upload File", command=self.upload_file)
+        self.upload_button.pack(pady=20)
+
+        # send button
+        self.send_button = tk.Button(self.root, text="Send", command=self.send_data)
+        self.send_button.pack(pady=20)
+
+        # reload button
+        self.reload_files_button = tk.Button(self.root, text="Refresh Files", command=self.reload_files)
+        self.reload_files_button.pack(anchor="se")
+
+        self.instantiate_file_labels()
+
+    # endregion FRAMES
+
+    # region COMMANDS
+
+    def connect_to_server(self):
+        ip = self.entry.get()
+        print(f"Attempting to connect to: {ip}")
+        self.client_instance = Client(ip, 12345)
+        self.client_instance.connect_to_server()
+
+        # If connection is successful, switch to the file upload frame
+        self.current_frame.destroy()
+        self.login_signup_frame()
+
+    def upload_file(self):
+        self.uploded_file_path = filedialog.askopenfilename()
+
+    def send_data(self):
+        thread = threading.Thread(target=self.client_instance.send_file_to_server,
+                                  args=(self.uploded_file_path, self.user_data[2]), daemon=True)
+        thread.start()
+
+        pass
+
     def login(self):
         username = self.username_entry.get()
         password = self.password_entry.get()
@@ -170,7 +171,7 @@ class ManagerUI:
             print(f"userdata: {self.user_data}")
             #  if login is successful we move on to the app
             self.current_frame.destroy()
-            self.file_upload_frame()
+            self.main_application_frame()
         else:
             self.error_label.config(text="Login Failed\ninvalid credentials")
             pass
@@ -186,6 +187,18 @@ class ManagerUI:
             self.login()
         else:
             self.error_label.config(text="SignUp Failed\nName Is Taken")
+
+    def download_file(self, filename):
+        thread = threading.Thread(target=self.client_instance.request_download_file,
+                                  args=(filename, int(self.user_data[2])))
+        thread.start()
+
+    def reload_files(self):
+        self.clear_file_labels()
+        self.initiate_users_files()
+        self.instantiate_file_labels()
+
+    # region File-display
 
     def initiate_users_files(self):
         files = self.client_instance.database.get_files_from_id(self.user_data[2])
@@ -208,10 +221,9 @@ class ManagerUI:
             button.destroy()
         self.display_files = []
 
-    def download_file(self, filename):
-        thread = threading.Thread(target=self.client_instance.request_download_file, args=(filename, int(self.user_data[2])))
-        thread.start()
+    # endregion File-display
 
+    # endregion COMMANDS
 
 
 def main():
