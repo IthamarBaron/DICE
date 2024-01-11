@@ -1,3 +1,4 @@
+import os
 import threading
 import tkinter as tk
 from tkinter import filedialog
@@ -153,13 +154,21 @@ class ManagerUI:
 
     def upload_file(self):
         self.uploded_file_path = filedialog.askopenfilename()
+        file_size = os.path.getsize(self.uploded_file_path)
+        file_size = file_size / (1024 ** 3)  # gb
+        if file_size > 1:
+            self.uploded_file_path = None
+            # TODO: DISPLAY FILE LARGER ERROR
+            return
 
     def send_data(self):
-        thread = threading.Thread(target=self.client_instance.send_file_to_server,
-                                  args=(self.uploded_file_path, self.user_data[2]), daemon=True)
-        thread.start()
-
-        pass
+        try:
+            if self.uploded_file_path:
+                thread = threading.Thread(target=self.client_instance.send_file_to_server,
+                                          args=(self.uploded_file_path, self.user_data[2]), daemon=True)
+                thread.start()
+        except Exception as e:
+            print(f"Error sending the file to the server: {e}")
 
     def login(self):
         username = self.username_entry.get()

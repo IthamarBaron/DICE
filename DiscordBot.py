@@ -87,7 +87,7 @@ class DiscordBot:
             await channel.send("File assembly in progress...")
             reference_message = await channel.fetch_message(message_id)
             all_messages = []
-            async for msg in reference_message.channel.history(limit=None):
+            async for msg in reference_message.channel.history(after=reference_message, limit=20):
                 all_messages.append(msg)
             reply_messages = [msg for msg in all_messages if msg.reference and msg.reference.message_id == message_id]
             sorted_reply_messages = sorted(reply_messages, key=lambda msg: msg.created_at)
