@@ -36,16 +36,19 @@ class Server:
 
     def receive_data(self):
         try:
-            packetID = self.client_socket.recv(1).decode()
+            packetID = int(self.client_socket.recv(1).decode())
             print(f"packetID {packetID}")
             data_length = self.client_socket.recv(4).decode()
             print(f"data_length {data_length}")
-            if int(packetID) == 1:
+            if packetID == 1:
                 self.handle_sign_up_request(data_length)
-            elif int(packetID) == 2:
+            elif packetID == 2:
                 self.handle_file_and_send_to_discord(data_length)
-            elif int(packetID) == 3:
+            elif packetID == 3:
                 self.handle_file_request(data_length)
+            elif packetID == 4:
+                self.handle_deletion_request(data_length)
+
         except Exception as e:
             print(f"Error receiving data: {e}")
 
@@ -76,6 +79,14 @@ class Server:
         except Exception as e:
             print(f"Error receive file: {e}")
         return [0, 0, 0]
+
+    def handle_deletion_request(self, data_length):
+        data = self.client_socket.recv(data_length).decode()
+        data = data.split("|") # filename | channelID
+        message_id = self.database.get_message_id_by_name(data[0],int(data[1]))
+        self.bot_instance.delete_file_from_chat(message_id,int(data[1]))
+        #TODO: make threaded
+
 
     def send_files_to_discord(self,file_name, file_content, channel_id):
 
