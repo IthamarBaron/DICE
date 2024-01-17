@@ -207,6 +207,9 @@ class ManagerUI:
         self.initiate_users_files()
         self.instantiate_file_labels()
 
+    def delete_file(self):
+        print("delete")
+
     # region File-display
 
     def initiate_users_files(self):
@@ -214,16 +217,28 @@ class ManagerUI:
         for file in files:
             self.users_files[file[0]] = file[1]
 
+
     def instantiate_file_labels(self):
         for file_name in self.users_files.keys():
+            # File Name Label
             file_label = tk.Label(self.root, text=file_name)
-            file_label.pack()
+            file_label.pack(side=tk.LEFT, padx=5)
 
-            download_button = tk.Button(self.root, text="Download",
+            # Download Button
+            download_button = tk.Button(self.root, text="Download", fg="green",
                                         command=lambda name=file_name: self.download_file(name))
-            download_button.pack()
+            download_button.pack(side=tk.LEFT, padx=5)
             self.display_files.append(download_button)
             self.display_files.append(file_label)
+
+            # Delete Button
+            delete_button = tk.Button(self.root, text="Delete", fg="red",
+                                      command=lambda name=file_name: self.delete_file(name))
+            delete_button.pack(side=tk.LEFT, padx=5)
+            self.display_files.append(delete_button)
+
+            # Line break for the next file
+            tk.Label(self.root, text="").pack()
 
     def clear_file_labels(self):
         for button in self.display_files:
