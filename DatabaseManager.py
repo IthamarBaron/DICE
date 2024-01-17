@@ -72,3 +72,11 @@ class Database:
             print(f"Error getting messageID: {e}")
             self.conn.commit()
             return 0
+
+    def delete_file_in_table(self, filename, channel_id):
+        try:
+            self.cursor.execute(f"DELETE FROM _{channel_id} WHERE filename='{filename}'")
+            self.conn.commit()
+        except Exception as e:
+            print(f"Error deleting file {e}")
+
