@@ -109,6 +109,11 @@ class Client:
         self.client_socket.send(data.encode())
         self.receive_data()
 
+    def request_file_deletion(self, filename, channel_id):
+        data = f"{filename}|{channel_id}"
+        data = f"{4}{self.zero_fill_length(data)}{data}"
+        self.client_socket.send(data.encode())
+
     @staticmethod
     def zero_fill_length(input_string, width=4):
         length = len(input_string)
