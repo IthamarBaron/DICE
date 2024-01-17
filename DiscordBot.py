@@ -100,6 +100,29 @@ class DiscordBot:
             print(f"Error during file assembling: {e}")
             return b""
 
+    async def delete_file_from_chat(self, message_id, channel_id=1182998507460771890):
+        try:
+            if isinstance(channel_id, int):
+                channel = self.bot.get_channel(channel_id)
+            else:
+                channel = self.bot.get_channel(int(channel_id))
+
+            reference_message = await channel.fetch_message(message_id)
+            await channel.send(f"Deleting File: {reference_message.content}")
+
+            all_messages = []
+            async for msg in reference_message.channel.history(after=reference_message, limit=20):
+                all_messages.append(msg)
+            reply_messages = [msg for msg in all_messages if msg.reference and msg.reference.message_id == message_id]
+
+            for msg in reply_messages:
+                await msg.delete()
+            await reference_message.delete()
+            print(f"Deletion process completed")
+
+        except Exception as e:
+            pass
+
     async def on_message(self, message: discord.Message):
         if message.author == self.bot.user:
             return  # Don't respond to ourselves
@@ -121,9 +144,10 @@ class DiscordBot:
             file.close()
             await self.send_file_in_chat(name, file_data)
 
-        elif user_message.lower().startswith("get"):
-            message_id = await self.get_message_id_by_content(str(channel), user_message[4::])
-            await self.assemble_file_from_chat(message_id)
+        elif user_message.lower().startswith("delete"):
+            message_params = user_message.split(" ")
+            await self.delete_file_from_chat(int(message_params[1]), int(message_params[2]))
+            print("deleting")
 
         elif user_message.lower().startswith("log"):
             pass
@@ -146,6 +170,6 @@ class DiscordBot:
 
         self.bot.run(self.token)
 
-
-"""bot = DiscordBot("")
+"""
+bot = DiscordBot("")
 bot.run_discord_bot()"""
