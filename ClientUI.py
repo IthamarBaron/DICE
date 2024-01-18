@@ -207,8 +207,11 @@ class ManagerUI:
         self.initiate_users_files()
         self.instantiate_file_labels()
 
-    def delete_file(self):
-        print("delete")
+    def delete_file(self, filename):
+        print(f"deleting file {filename}")
+        thread = threading.Thread(target=self.client_instance.request_file_deletion,
+                                  args=(filename, int(self.user_data[2])))
+        thread.start
 
     # region File-display
 
@@ -217,28 +220,27 @@ class ManagerUI:
         for file in files:
             self.users_files[file[0]] = file[1]
 
-
     def instantiate_file_labels(self):
         for file_name in self.users_files.keys():
+            # Frame to group components for each file
+            file_frame = tk.Frame(self.root)
+            file_frame.pack()
+
             # File Name Label
-            file_label = tk.Label(self.root, text=file_name)
+            file_label = tk.Label(file_frame, text=file_name)
             file_label.pack(side=tk.LEFT, padx=5)
 
             # Download Button
-            download_button = tk.Button(self.root, text="Download", fg="green",
+            download_button = tk.Button(file_frame, text="Download", fg="green",
                                         command=lambda name=file_name: self.download_file(name))
             download_button.pack(side=tk.LEFT, padx=5)
-            self.display_files.append(download_button)
-            self.display_files.append(file_label)
 
             # Delete Button
-            delete_button = tk.Button(self.root, text="Delete", fg="red",
+            delete_button = tk.Button(file_frame, text="Delete", fg="red",
                                       command=lambda name=file_name: self.delete_file(name))
             delete_button.pack(side=tk.LEFT, padx=5)
-            self.display_files.append(delete_button)
 
-            # Line break for the next file
-            tk.Label(self.root, text="").pack()
+            self.display_files.extend([file_frame, file_label, download_button, delete_button])
 
     def clear_file_labels(self):
         for button in self.display_files:
