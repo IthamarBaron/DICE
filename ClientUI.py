@@ -13,7 +13,7 @@ class ManagerUI:
         self.root = root
         self.current_frame = None
         self.user_data = None
-        self.client_instance = None
+        self.client_instance = None  # type: Client
         self.connect_frame()
         self.users_files = {}
         self.display_files=[]
@@ -135,6 +135,15 @@ class ManagerUI:
         # reload button
         self.reload_files_button = tk.Button(self.root, text="Refresh Files", command=self.reload_files)
         self.reload_files_button.pack(anchor="se")
+        self.reload_files_buttont = tk.Button(self.root, text="CLEAR Files", command=self.clear_file_labels)
+        self.reload_files_buttont.pack(anchor="se")
+        self.reload_files_buttontt = tk.Button(self.root, text="INNIT Files", command=self.initiate_users_files)
+        self.reload_files_buttontt.pack(anchor="se")
+        self.reload_files_buttontt = tk.Button(self.root, text="INSTANTIATE Files", command=self.instantiate_file_labels)
+        self.reload_files_buttontt.pack(anchor="se")
+
+
+
 
         self.instantiate_file_labels()
 
@@ -203,24 +212,31 @@ class ManagerUI:
         thread.start()
 
     def reload_files(self):
+        # Clear existing labels and buttons
         self.clear_file_labels()
+        # Update underlying data (self.users_files)
         self.initiate_users_files()
+        # Instantiate new labels and buttons using updated data
         self.instantiate_file_labels()
 
     def delete_file(self, filename):
         print(f"deleting file {filename}")
         thread = threading.Thread(target=self.client_instance.request_file_deletion,
                                   args=(filename, int(self.user_data[2])))
-        thread.start
+        thread.start()
 
     # region File-display
 
     def initiate_users_files(self):
+        files = []
         files = self.client_instance.database.get_files_from_id(self.user_data[2])
+        print(files)
         for file in files:
             self.users_files[file[0]] = file[1]
+        print(F"INNINT {self.users_files}")
 
     def instantiate_file_labels(self):
+        print(f"instantiating {self.users_files}")
         for file_name in self.users_files.keys():
             # Frame to group components for each file
             file_frame = tk.Frame(self.root)
