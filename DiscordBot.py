@@ -119,9 +119,10 @@ class DiscordBot:
                 await msg.delete()
             await reference_message.delete()
             print(f"Deletion process completed")
+            return True
 
         except Exception as e:
-            pass
+            return False
 
     async def on_message(self, message: discord.Message):
         if message.author == self.bot.user:

@@ -38,7 +38,7 @@ class Server:
         try:
             packetID = int(self.client_socket.recv(1).decode())
             print(f"packetID {packetID}")
-            data_length = self.client_socket.recv(4).decode()
+            data_length = int(self.client_socket.recv(4).decode())
             print(f"data_length {data_length}")
             if packetID == 1:
                 self.handle_sign_up_request(data_length)
@@ -82,14 +82,18 @@ class Server:
 
     def handle_deletion_request(self, data_length):
         data = self.client_socket.recv(data_length).decode()
+        print(f"Data: {data}")
         data = data.split("|") # filename | channelID
-        message_id = self.database.get_message_id_by_name(data[0],int(data[1]))
-        self.bot_instance.delete_file_from_chat(message_id,int(data[1]))
+        message_id = self.database.get_message_id_by_name(data[0], int(data[1]))
+
+        proc = asyncio.run_coroutine_threadsafe(self.bot_instance.delete_file_from_chat(message_id, int(data[1])), self.bot_instance.bot.loop)
+        is_successful = proc.result()
+        if is_successful:
+            print("successful!")
+            self.database.delete_file_in_table(data[0], data[1])
         #TODO: make threaded
 
-
     def send_files_to_discord(self,file_name, file_content, channel_id):
-
         print(f"Sending file [{file_name}] in channel [{self.bot_instance.bot.get_channel(channel_id)}]")
         temp = asyncio.run_coroutine_threadsafe(self.bot_instance.send_file_in_chat(file_name, file_content, channel_id), self.bot_instance.bot.loop)
         reference_message_info = temp.result()
@@ -149,4 +153,5 @@ if __name__ == "__main__":
     server = Server('LocalHost', 12345, "")
     server.start()
     while True:
+        print("a")
         server.receive_data()

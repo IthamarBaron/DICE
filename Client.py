@@ -102,6 +102,13 @@ class Client:
             self.database.create_new_account(username, password, int(response))
             return True
 
+    def request_file_deletion(self, filename, channel_id):
+        print("method called")
+        data = f"{filename}|{channel_id}"
+        data = f"{4}{self.zero_fill_length(data)}{data}"
+        self.client_socket.send(data.encode())
+        print("Sent file request")
+
     def request_download_file(self, filename, channel_id):
         self.temp_start_time = time.time()
         data = f"{filename}|{channel_id}"
@@ -109,10 +116,7 @@ class Client:
         self.client_socket.send(data.encode())
         self.receive_data()
 
-    def request_file_deletion(self, filename, channel_id):
-        data = f"{filename}|{channel_id}"
-        data = f"{4}{self.zero_fill_length(data)}{data}"
-        self.client_socket.send(data.encode())
+
 
     @staticmethod
     def zero_fill_length(input_string, width=4):
