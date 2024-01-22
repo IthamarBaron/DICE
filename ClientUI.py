@@ -115,13 +115,12 @@ class ManagerUI:
     def main_application_frame(self):
 
         self.initiate_users_files()
-        print(self.users_files)
 
         self.current_frame = tk.Frame(self.root, bg=BACKGROUND_COLOR)
         self.root.title("File Upload")
 
         # title
-        self.title_label = tk.Label(self.root, text="Welcome to Dice", font=("Arial", 16))
+        self.title_label = tk.Label(self.root, text="DICE - Debug panel", font=("Arial", 16))
         self.title_label.pack(pady=10)
 
         # file upload button
@@ -228,9 +227,10 @@ class ManagerUI:
     # region File-display
 
     def initiate_users_files(self):
-        files = []
         files = self.client_instance.database.get_files_from_id(self.user_data[2])
+        print(f" user_data = {self.user_data}")
         print(files)
+        self.users_files = {}  #clearing the dict before instantiation
         for file in files:
             self.users_files[file[0]] = file[1]
         print(F"INNINT {self.users_files}")
@@ -272,6 +272,7 @@ def main():
     root = tk.Tk()
     app_controller = ManagerUI(root)
     root.mainloop()
+
 
 if __name__ == "__main__":
     main()
