@@ -1,9 +1,7 @@
 import asyncio
 from DatabaseManager import Database
-
-import tqdm
+import json
 import socket
-import warnings
 import DiscordBot
 import threading
 
@@ -36,19 +34,19 @@ class Server:
 
     def receive_data(self):
         try:
-            packetID = int(self.client_socket.recv(1).decode())
-            print(f"packetID {packetID}")
-            data_length = int(self.client_socket.recv(4).decode())
-            print(f"data_length {data_length}")
-            if packetID == 1:
-                self.handle_sign_up_request(data_length)
-            elif packetID == 2:
-                self.handle_file_and_send_to_discord(data_length)
-            elif packetID == 3:
-                self.handle_file_request(data_length)
-            elif packetID == 4:
-                self.handle_deletion_request(data_length)
-
+            packet_length = int(self.client_socket.recv(10).decode())
+            print(f"Packet Length {packet_length}")
+            packet = self.client_socket.recv(packet_length).decode()
+            packet = json.loads(packet)
+            print(f"Packet : {packet}")
+            if packet["packetID"] == 1:
+                self.handle_sign_up_request(packet["data"])
+            elif packet["packetID"] == 2:
+                self.handle_file_and_send_to_discord(packet["data"])
+            elif packet["packetID"] == 3:
+                self.handle_file_request(packet["data"])
+            elif packet["packetID"] == 4:
+                self.handle_deletion_request(packet["data"])
         except Exception as e:
             print(f"Error receiving data: {e}")
 
@@ -123,24 +121,18 @@ class Server:
         if file_data[1]:
             self.send_files_to_discord(file_data[0], file_data[1], file_data[2])
 
-    def handle_sign_up_request(self,data_length):
-        data = self.client_socket.recv(int(data_length)).decode()
-        signup_data = data.split("|")
+    def handle_sign_up_request(self, packet_data):
 
-        if not self.database.is_username_availability(signup_data[0]):
+        if not self.database.is_username_availability(packet_data["username"]):
             print("Username unavailable")
-            #  hahaha i am 19 chars long
-            data = "noooooooooooooooooo"
-            data = f"{data}"
-            self.client_socket.send(data.encode())
+            self.client_socket.send(bytes(0))
             pass
         else:
             print("username available")
-            temp = asyncio.run_coroutine_threadsafe(self.bot_instance.create_new_storage_area(signup_data[0]), self.bot_instance.bot.loop)
+            temp = asyncio.run_coroutine_threadsafe(self.bot_instance.create_new_storage_area(packet_data["username"]), self.bot_instance.bot.loop)
             channel_id = temp.result()
-            print(channel_id)
-            data = f"{channel_id}"
-            self.client_socket.send(data.encode())
+            self.database.create_new_account(packet_data["username"], packet_data["password"], int(channel_id))
+            self.client_socket.send(bytes(1))
 
     @staticmethod
     def zero_fill_length(input_string, width=4):

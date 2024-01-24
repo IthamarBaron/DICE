@@ -1,4 +1,5 @@
 import os
+import json
 import time
 import socket
 from DatabaseManager import Database
@@ -76,6 +77,7 @@ class Client:
 
         This method sends the file name, file size, and file data to the server.
         :param file_path: The path of the file to send.
+        :param channel_id: channel that the message will be stored in
         """
         file_name = os.path.basename(file_path)
 
@@ -91,15 +93,21 @@ class Client:
         self.client_socket.sendall(file_data)
 
     def request_signup(self, username, password):
-        data = f"{username}|{password}"
-        data = f"{1}{Client.zero_fill_length(data)}{data}".encode()
-        self.client_socket.send(data)
 
-        response = self.client_socket.recv(19).decode()
-        if response.startswith("no"):
+        packet = {
+            "packetID": 1,
+            "data": {
+                "username": username,
+                "password": password
+            }
+        }
+        data_to_send = f"{Client.zero_fill_length(str(packet))}{json.dumps(packet)}".encode()
+        self.client_socket.send(data_to_send)
+
+        response = self.client_socket.recv(1)
+        if response == 0:
             return False
         else:
-            self.database.create_new_account(username, password, int(response))
             return True
 
     def request_file_deletion(self, filename, channel_id):
@@ -119,7 +127,7 @@ class Client:
 
 
     @staticmethod
-    def zero_fill_length(input_string, width=4):
+    def zero_fill_length(input_string, width=10):
         length = len(input_string)
         length_str = str(length).zfill(width)
         return length_str
