@@ -5,7 +5,7 @@ import socket
 from DatabaseManager import Database
 
 
-class Client:
+class Sahar:
     def __init__(self, host, port):
         self.host = host
         self.port = port
@@ -31,6 +31,19 @@ class Client:
             print(f"Connection error: {str(e)}")
 
     def receive_data(self):
+
+        try:
+            packet_length = int(self.client_socket.recv(10).decode())
+            print(f"Packet Length {packet_length}")
+            packet = self.client_socket.recv(packet_length).decode()
+            packet = json.loads(packet)
+            print(f"Packet : {packet}")
+            if packet["packetID"] == 1:
+                pass
+        except Exception as e:
+            print(f"Error receiving data: {e}")
+
+
         try:
             print("receive data called!")
             packetID = self.client_socket.recv(1).decode()
@@ -79,6 +92,7 @@ class Client:
         :param file_path: The path of the file to send.
         :param channel_id: channel that the message will be stored in
         """
+
         file_name = os.path.basename(file_path)
 
         file = open(file_path, "rb")
@@ -86,11 +100,17 @@ class Client:
         file_data = file.read()
         file.close()
 
-        file_info = f"{file_name}|{file_size}|{channel_id}"
-        data = f"{2}{Client.zero_fill_length(file_info)}{file_info}".encode()
-        print(f"{2}{Client.zero_fill_length(file_info)}{file_info} FILEDATA")
-        self.client_socket.sendall(data)
-        self.client_socket.sendall(file_data)
+        packet = {
+            "packetID": 2,
+            "data": {
+                "filename": file_name,
+                "file_size": file_size,
+                "file_data": file_data
+            }
+        }
+
+        data_to_send = f"{Sahar.zero_fill_length(str(packet))}{json.dumps(packet)}".encode()
+        self.client_socket.sendall(data_to_send)
 
     def request_signup(self, username, password):
 
@@ -101,8 +121,8 @@ class Client:
                 "password": password
             }
         }
-        data_to_send = f"{Client.zero_fill_length(str(packet))}{json.dumps(packet)}".encode()
-        self.client_socket.send(data_to_send)
+        data_to_send = f"{Sahar.zero_fill_length(str(packet))}{json.dumps(packet)}".encode()
+        self.client_socket.sendall(data_to_send)
 
         response = self.client_socket.recv(1)
         if response == 0:
@@ -111,18 +131,27 @@ class Client:
             return True
 
     def request_file_deletion(self, filename, channel_id):
-        print("method called")
-        data = f"{filename}|{channel_id}"
-        data = f"{4}{self.zero_fill_length(data)}{data}"
-        self.client_socket.send(data.encode())
-        print("Sent file request")
+
+        packet = {
+            "packetID": 4,
+            "data": {
+                "filename": filename,
+                "channel_id": channel_id
+            }
+        }
+        data_to_send = f"{Sahar.zero_fill_length(str(packet))}{json.dumps(packet)}".encode()
+        self.client_socket.sendall(data_to_send)
 
     def request_download_file(self, filename, channel_id):
-        self.temp_start_time = time.time()
-        data = f"{filename}|{channel_id}"
-        data = f"{3}{self.zero_fill_length(data)}{data}"
-        self.client_socket.send(data.encode())
-        self.receive_data()
+        packet = {
+            "packetID": 3,
+            "data": {
+                "filename": filename,
+                "channel_id": channel_id
+            }
+        }
+        data_to_send = f"{Sahar.zero_fill_length(str(packet))}{json.dumps(packet)}".encode()
+        self.client_socket.sendall(data_to_send)
 
 
 
@@ -135,5 +164,5 @@ class Client:
 
 
 if __name__ == "__main__":
-    client = Client('LocalHost', 12345)
+    client = Sahar('LocalHost', 12345)
     client.connect_to_server()

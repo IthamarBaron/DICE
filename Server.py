@@ -18,10 +18,8 @@ class Server:
     def start(self) -> None:
         """
         Start server and waits for client connections.
-
         Creates a server socket, binds to host and port, and listens for clients.
         Upon connection, prints client information.
-
         :return: None
         """
         server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
