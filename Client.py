@@ -5,7 +5,7 @@ import socket
 from DatabaseManager import Database
 
 
-class Sahar:
+class Client:
     def __init__(self, host, port):
         self.host = host
         self.port = port
@@ -109,7 +109,7 @@ class Sahar:
             }
         }
 
-        data_to_send = f"{Sahar.zero_fill_length(str(packet))}{json.dumps(packet)}".encode()
+        data_to_send = f"{Client.zero_fill_length(str(packet))}{json.dumps(packet)}".encode()
         self.client_socket.sendall(data_to_send)
 
     def request_signup(self, username, password):
@@ -121,7 +121,7 @@ class Sahar:
                 "password": password
             }
         }
-        data_to_send = f"{Sahar.zero_fill_length(str(packet))}{json.dumps(packet)}".encode()
+        data_to_send = f"{Client.zero_fill_length(str(packet))}{json.dumps(packet)}".encode()
         self.client_socket.sendall(data_to_send)
 
         response = self.client_socket.recv(1)
@@ -139,7 +139,7 @@ class Sahar:
                 "channel_id": channel_id
             }
         }
-        data_to_send = f"{Sahar.zero_fill_length(str(packet))}{json.dumps(packet)}".encode()
+        data_to_send = f"{Client.zero_fill_length(str(packet))}{json.dumps(packet)}".encode()
         self.client_socket.sendall(data_to_send)
 
     def request_download_file(self, filename, channel_id):
@@ -150,7 +150,7 @@ class Sahar:
                 "channel_id": channel_id
             }
         }
-        data_to_send = f"{Sahar.zero_fill_length(str(packet))}{json.dumps(packet)}".encode()
+        data_to_send = f"{Client.zero_fill_length(str(packet))}{json.dumps(packet)}".encode()
         self.client_socket.sendall(data_to_send)
 
 
@@ -164,5 +164,5 @@ class Sahar:
 
 
 if __name__ == "__main__":
-    client = Sahar('LocalHost', 12345)
+    client = Client('LocalHost', 12345)
     client.connect_to_server()
