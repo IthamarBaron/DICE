@@ -31,19 +31,6 @@ class Client:
             print(f"Connection error: {str(e)}")
 
     def receive_data(self):
-
-        try:
-            packet_length = int(self.client_socket.recv(10).decode())
-            print(f"Packet Length {packet_length}")
-            packet = self.client_socket.recv(packet_length).decode()
-            packet = json.loads(packet)
-            print(f"Packet : {packet}")
-            if packet["packetID"] == 1:
-                pass
-        except Exception as e:
-            print(f"Error receiving data: {e}")
-
-
         try:
             print("receive data called!")
             packetID = self.client_socket.recv(1).decode()
@@ -57,6 +44,7 @@ class Client:
         except Exception as e:
             print(f"Error receiving data: {e}")
 
+    #TODO: change get_files_from_server() to work with the new protocol. NOTE: this needs to be done after the server's protocol is done
     def get_files_from_server(self, data_length):
         try:
             file_info = self.client_socket.recv(int(data_length)).decode()
@@ -92,7 +80,6 @@ class Client:
         :param file_path: The path of the file to send.
         :param channel_id: channel that the message will be stored in
         """
-
         file_name = os.path.basename(file_path)
 
         file = open(file_path, "rb")
@@ -102,15 +89,16 @@ class Client:
 
         packet = {
             "packetID": 2,
-            "data": {
-                "filename": file_name,
+            "file_info": {
+                "file_name": file_name,
                 "file_size": file_size,
-                "file_data": file_data
+                "channel_id": channel_id
             }
         }
 
         data_to_send = f"{Client.zero_fill_length(str(packet))}{json.dumps(packet)}".encode()
-        self.client_socket.sendall(data_to_send)
+        self.client_socket.send(data_to_send)
+        self.client_socket.sendall(file_data)
 
     def request_signup(self, username, password):
 
@@ -122,7 +110,7 @@ class Client:
             }
         }
         data_to_send = f"{Client.zero_fill_length(str(packet))}{json.dumps(packet)}".encode()
-        self.client_socket.sendall(data_to_send)
+        self.client_socket.send(data_to_send)
 
         response = self.client_socket.recv(1)
         if response == 0:
@@ -130,29 +118,32 @@ class Client:
         else:
             return True
 
-    def request_file_deletion(self, filename, channel_id):
-
+    def request_file_deletion(self, file_name, channel_id):
         packet = {
             "packetID": 4,
             "data": {
-                "filename": filename,
+                "file_name": file_name,
                 "channel_id": channel_id
             }
         }
+        print("method called")
         data_to_send = f"{Client.zero_fill_length(str(packet))}{json.dumps(packet)}".encode()
-        self.client_socket.sendall(data_to_send)
+        self.client_socket.send(data_to_send)
+        print("Sent file request")
 
-    def request_download_file(self, filename, channel_id):
+    def request_download_file(self, file_name, channel_id):
+        self.temp_start_time = time.time()
+
         packet = {
             "packetID": 3,
             "data": {
-                "filename": filename,
+                "file_name": file_name,
                 "channel_id": channel_id
             }
         }
         data_to_send = f"{Client.zero_fill_length(str(packet))}{json.dumps(packet)}".encode()
-        self.client_socket.sendall(data_to_send)
-
+        self.client_socket.send(data_to_send)
+        self.receive_data()
 
 
     @staticmethod
