@@ -12,6 +12,7 @@ class Client:
         self.database = Database("Dice-Database.db")
         self.temp_start_time = None
         self.temp_end_time = None
+        self.packet_handlers = [None, None, self.get_files_from_server]
 
     def connect_to_server(self) -> None:
         """
@@ -33,34 +34,32 @@ class Client:
     def receive_data(self):
         try:
             print("receive data called!")
-            packetID = self.client_socket.recv(1).decode()
-            print(f"packetID {packetID}")
-            data_length = self.client_socket.recv(4).decode()
+            packet_id = int(self.client_socket.recv(1).decode())
+            print(f"packetID {packet_id}")
+            data_length = int(self.client_socket.recv(4).decode())
             print(f"data_length {data_length}")
-            if int(packetID) == 1:
-                pass
-            if int(packetID) ==2:
-                self.get_files_from_server(data_length)
+            self.packet_handlers[packet_id](data_length)
         except Exception as e:
             print(f"Error receiving data: {e}")
 
-    #TODO: change get_files_from_server() to work with the new protocol. NOTE: this needs to be done after the server's protocol is done
+    # TODO: change get_files_from_server() to work with the new protocol. NOTE: this needs to be done after the
+    #  server's protocol is done
     def get_files_from_server(self, data_length):
         try:
             file_info = self.client_socket.recv(int(data_length)).decode()
-            file_info = file_info.split("|")
+            file_info = json.loads(file_info)
 
-            file_name = file_info[0]
-            file_size = int(file_info[1])
+            file_name = file_info["file_name"]
+            file_size = int(file_info["len_file_bytes"])
             print(f"Receiving file: {file_name} of size: {file_size / (1024 ** 2):.2f} MB")
 
             received_bytes_count = 0
-            file = open(f"received_{file_name}",'wb')
+            file = open(f"received_{file_name}", 'wb')
             while received_bytes_count != file_size:
                 part_of_file = self.client_socket.recv(file_size - received_bytes_count)
                 if not len(part_of_file):
                     print("Connection lost")
-                    #TODO: do something about this
+                    # TODO: do something about this (make faster)
                 file.write(part_of_file)
                 received_bytes_count += len(part_of_file)
             file.close()
@@ -68,7 +67,7 @@ class Client:
             self.temp_end_time = time.time()
             delta_time = int(self.temp_end_time - self.temp_start_time)
             print(f"time time elapsed: {delta_time}")
-            print(f"Download average speed: {(file_size / (1024 ** 2))/delta_time}")
+            print(f"Download average speed: {(file_size / (1024 ** 2)) / delta_time}")
         except Exception as e:
             print(f"Error receive file: {e}")
 
@@ -88,11 +87,9 @@ class Client:
         file.close()
 
         packet = {
-            "file_info": {
-                "file_name": file_name,
-                "file_size": file_size,
-                "channel_id": channel_id
-            }
+            "file_name": file_name,
+            "file_size": file_size,
+            "channel_id": channel_id
         }
 
         data_to_send = f"{2}{Client.zero_fill_length(str(packet))}{json.dumps(packet)}".encode()
@@ -135,13 +132,11 @@ class Client:
         self.client_socket.send(data_to_send)
         self.receive_data()
 
-
     @staticmethod
     def zero_fill_length(input_string, width=4):
         length = len(input_string)
         length_str = str(length).zfill(width)
         return length_str
-
 
 
 if __name__ == "__main__":
