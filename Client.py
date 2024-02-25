@@ -88,7 +88,6 @@ class Client:
         file.close()
 
         packet = {
-            "packetID": 2,
             "file_info": {
                 "file_name": file_name,
                 "file_size": file_size,
@@ -96,20 +95,17 @@ class Client:
             }
         }
 
-        data_to_send = f"{Client.zero_fill_length(str(packet))}{json.dumps(packet)}".encode()
+        data_to_send = f"{2}{Client.zero_fill_length(str(packet))}{json.dumps(packet)}".encode()
         self.client_socket.send(data_to_send)
         self.client_socket.sendall(file_data)
 
     def request_signup(self, username, password):
 
         packet = {
-            "packetID": 1,
-            "data": {
-                "username": username,
-                "password": password
-            }
+            "username": username,
+            "password": password
         }
-        data_to_send = f"{Client.zero_fill_length(str(packet))}{json.dumps(packet)}".encode()
+        data_to_send = f"{1}{Client.zero_fill_length(str(packet))}{json.dumps(packet)}".encode()
         self.client_socket.send(data_to_send)
 
         response = self.client_socket.recv(1)
@@ -120,14 +116,11 @@ class Client:
 
     def request_file_deletion(self, file_name, channel_id):
         packet = {
-            "packetID": 4,
-            "data": {
-                "file_name": file_name,
-                "channel_id": channel_id
-            }
+            "file_name": file_name,
+            "channel_id": channel_id
         }
         print("method called")
-        data_to_send = f"{Client.zero_fill_length(str(packet))}{json.dumps(packet)}".encode()
+        data_to_send = f"{4}{Client.zero_fill_length(str(packet))}{json.dumps(packet)}".encode()
         self.client_socket.send(data_to_send)
         print("Sent file request")
 
@@ -135,19 +128,16 @@ class Client:
         self.temp_start_time = time.time()
 
         packet = {
-            "packetID": 3,
-            "data": {
-                "file_name": file_name,
-                "channel_id": channel_id
-            }
+            "file_name": file_name,
+            "channel_id": channel_id
         }
-        data_to_send = f"{Client.zero_fill_length(str(packet))}{json.dumps(packet)}".encode()
+        data_to_send = f"{3}{Client.zero_fill_length(str(packet))}{json.dumps(packet)}".encode()
         self.client_socket.send(data_to_send)
         self.receive_data()
 
 
     @staticmethod
-    def zero_fill_length(input_string, width=10):
+    def zero_fill_length(input_string, width=4):
         length = len(input_string)
         length_str = str(length).zfill(width)
         return length_str
