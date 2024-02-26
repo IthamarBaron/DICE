@@ -14,7 +14,7 @@ class Server:
         self.host = host
         self.port = port
         self.packet_handlers = [None, self.handle_sign_up_request, self.handle_file_and_send_to_discord,
-                                self.handle_file_request, self.handle_deletion_request]
+                                self.handle_file_request, self.handle_deletion_request, self.handle_login_request]
         self.database = Database("Dice-Database.db")
         self.bot_instance = DiscordBot.DiscordBot(token)
         thread = threading.Thread(target=self.bot_instance.run_discord_bot, daemon=True)
@@ -98,7 +98,6 @@ class Server:
             self.client_socket.send(data.encode())
             pass
         else:
-            # TODO: acutally make it sign up from the serverside insted of the client omfg cant belive ive missed this
             print("username available")
             attempt_channel_creation = asyncio.run_coroutine_threadsafe(self.bot_instance.create_new_storage_area(data["username"]),
                                                     self.bot_instance.bot.loop)
@@ -152,6 +151,18 @@ class Server:
             print("successful!")
             self.database.delete_file_in_table(data["file_name"], data["channel_id"])
         # TODO: make threaded
+
+    def handle_login_request(self, data_length):
+        data = self.client_socket.recv(data_length).decode()
+        data = json.loads(data)
+
+        row = self.database.attempt_login(data["username"], data["password"])
+        packet = {
+            "row": row
+        }
+        print(row)
+        data_to_send = f"{1}{self.zero_fill_length(str(packet))}{json.dumps(packet)}".encode()
+        self.client_socket.sendall(data_to_send)
 
     # endregion Handlers
 

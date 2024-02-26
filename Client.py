@@ -2,17 +2,16 @@ import os
 import json
 import time
 import socket
-from DatabaseManager import Database
 
 
 class Client:
     def __init__(self, host, port):
         self.host = host
         self.port = port
-        self.database = Database("Dice-Database.db")
         self.temp_start_time = None
         self.temp_end_time = None
-        self.packet_handlers = [None, None, self.get_files_from_server]
+        self.user_data = None
+        self.packet_handlers = [None, self.handle_login_data, self.get_files_from_server]
 
     def connect_to_server(self) -> None:
         """
@@ -42,8 +41,6 @@ class Client:
         except Exception as e:
             print(f"Error receiving data: {e}")
 
-    # TODO: change get_files_from_server() to work with the new protocol. NOTE: this needs to be done after the
-    #  server's protocol is done
     def get_files_from_server(self, data_length):
         try:
             file_info = self.client_socket.recv(int(data_length)).decode()
@@ -133,6 +130,22 @@ class Client:
         self.client_socket.send(data_to_send)
         self.receive_data()
 
+    def request_login(self, username, password):
+
+        packet = {
+            "username": username,
+            "password": password,
+        }
+
+        data_to_send = f"{5}{Client.zero_fill_length(str(packet))}{json.dumps(packet)}".encode()
+        self.client_socket.send(data_to_send)
+        self.receive_data() # TODO: add another handler for the login details recivement
+
+    def handle_login_data(self, data_length):
+        data = self.client_socket.recv(data_length).decode()
+        data = json.loads(data)
+        print(data["row"])
+        self.user_data = data["row"]
     @staticmethod
     def zero_fill_length(input_string, width=4):
         length = len(input_string)

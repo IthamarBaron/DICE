@@ -5,6 +5,7 @@ from tkinter import filedialog
 from tkinter import PhotoImage
 from Client import Client
 from tkinter import font
+
 BACKGROUND_COLOR = "#5f8ac2"
 
 
@@ -12,11 +13,10 @@ class ManagerUI:
     def __init__(self, root):
         self.root = root
         self.current_frame = None
-        self.user_data = None
         self.client_instance = None  # type: Client
         self.connect_frame()
         self.users_files = {}
-        self.display_files=[]
+        self.display_files = []
 
     # region FRAMES
 
@@ -49,7 +49,8 @@ class ManagerUI:
         self.entry.pack(pady=20)
 
         # Connect Button
-        connect_button = tk.Button(self.current_frame, text="Connect", command=self.connect_to_server, bg="#4CAF50", fg="black",
+        connect_button = tk.Button(self.current_frame, text="Connect", command=self.connect_to_server, bg="#4CAF50",
+                                   fg="black",
                                    bd=2, relief="solid", width=15, height=2)
         connect_button.pack(pady=20)
 
@@ -70,29 +71,33 @@ class ManagerUI:
         self.root.geometry("500x400")
 
         # Title
-        title_label = tk.Label(self.current_frame, text="LOG IN/SIGN UP", font=("Rubik",25,"bold"), bg=BACKGROUND_COLOR, fg="white")
+        title_label = tk.Label(self.current_frame, text="LOG IN/SIGN UP", font=("Rubik", 25, "bold"),
+                               bg=BACKGROUND_COLOR, fg="white")
         title_label.pack(side=tk.TOP, pady=20)
 
         # Username Section
-        username_label = tk.Label(self.current_frame, text="Name", font=("Arial", 12, "bold"), bg=BACKGROUND_COLOR, fg="black")
+        username_label = tk.Label(self.current_frame, text="Name", font=("Arial", 12, "bold"), bg=BACKGROUND_COLOR,
+                                  fg="black")
         username_label.pack(side=tk.TOP, padx=20, pady=(0, 0))
 
-        self.username_entry = tk.Entry(self.current_frame, bg="#D3D3D3", fg="#1f1f1f", bd=2, insertbackground="black", width=45
-                                  , relief=tk.SOLID,)
+        self.username_entry = tk.Entry(self.current_frame, bg="#D3D3D3", fg="#1f1f1f", bd=2, insertbackground="black",
+                                       width=45
+                                       , relief=tk.SOLID, )
         self.username_entry.insert(0, "Enter username")
         self.username_entry.pack(side=tk.TOP, padx=20, pady=(0, 10), ipady=5)
-
 
         # Password Section
         password_label = tk.Label(self.current_frame, text="Password", font=("Arial", 12, "bold"), bg=BACKGROUND_COLOR,
                                   fg="black")
         password_label.pack(side=tk.TOP, padx=20, pady=(0, 0))
 
-        self.password_entry = tk.Entry(self.current_frame, show="*", bg="#D3D3D3", fg="#1f1f1f", bd=2, insertbackground="black",
-                                  width=45, relief=tk.SOLID)
+        self.password_entry = tk.Entry(self.current_frame, show="*", bg="#D3D3D3", fg="#1f1f1f", bd=2,
+                                       insertbackground="black",
+                                       width=45, relief=tk.SOLID)
         self.password_entry.pack(side=tk.TOP, padx=20, pady=(0, 10), ipady=5)
 
-        self.error_label = tk.Label(self.current_frame, text="", font=("Arial", 12, "bold"), fg="#cf3e3e",bg=BACKGROUND_COLOR)
+        self.error_label = tk.Label(self.current_frame, text="", font=("Arial", 12, "bold"), fg="#cf3e3e",
+                                    bg=BACKGROUND_COLOR)
         self.error_label.pack()
 
         # Buttons
@@ -138,11 +143,9 @@ class ManagerUI:
         self.reload_files_buttont.pack(anchor="se")
         self.reload_files_buttontt = tk.Button(self.root, text="INNIT Files", command=self.initiate_users_files)
         self.reload_files_buttontt.pack(anchor="se")
-        self.reload_files_buttontt = tk.Button(self.root, text="INSTANTIATE Files", command=self.instantiate_file_labels)
+        self.reload_files_buttontt = tk.Button(self.root, text="INSTANTIATE Files",
+                                               command=self.instantiate_file_labels)
         self.reload_files_buttontt.pack(anchor="se")
-
-
-
 
         self.instantiate_file_labels()
 
@@ -173,7 +176,7 @@ class ManagerUI:
         try:
             if self.uploded_file_path:
                 thread = threading.Thread(target=self.client_instance.send_file_to_server,
-                                          args=(self.uploded_file_path, self.user_data[2]), daemon=True)
+                                          args=(self.uploded_file_path, self.client_instance.user_data[2]), daemon=True)
                 thread.start()
         except Exception as e:
             print(f"Error sending the file to the server: {e}")
@@ -182,10 +185,12 @@ class ManagerUI:
         username = self.username_entry.get()
         password = self.password_entry.get()
         print(f"attempting login as {username} with {password}")
-        login_data = self.client_instance.database.attempt_login(username, password)
+        self.client_instance.request_login(username, password)
+        login_data = self.client_instance.user_data
+        print(f"login_data: {login_data}")
         if login_data:
-            self.user_data = login_data
-            print(f"userdata: {self.user_data}")
+            self.client_instance.user_data = login_data
+            print(f"userdata: {self.client_instance.user_data}")
             #  if login is successful we move on to the app
             self.current_frame.destroy()
             self.main_application_frame()
@@ -207,7 +212,7 @@ class ManagerUI:
 
     def download_file(self, filename):
         thread = threading.Thread(target=self.client_instance.request_download_file,
-                                  args=(filename, int(self.user_data[2])))
+                                  args=(filename, int(self.client_instance.user_data[2])))
         thread.start()
 
     def reload_files(self):
@@ -221,16 +226,17 @@ class ManagerUI:
     def delete_file(self, filename):
         print(f"deleting file {filename}")
         thread = threading.Thread(target=self.client_instance.request_file_deletion,
-                                  args=(filename, int(self.user_data[2])))
+                                  args=(filename, int(self.client_instance.user_data[2])))
         thread.start()
 
     # region File-display
 
+#TODO: ALSO MAKE THIS SERER SIDE
     def initiate_users_files(self):
-        files = self.client_instance.database.get_files_from_id(self.user_data[2])
-        print(f" user_data = {self.user_data}")
+        files = self.client_instance.database.get_files_from_id(self.client_instance.user_data[2])
+        print(f" user_data = {self.client_instance.user_data}")
         print(files)
-        self.users_files = {}  #clearing the dict before instantiation
+        self.users_files = {}  # clearing the dict before instantiation
         for file in files:
             self.users_files[file[0]] = file[1]
         print(F"INNINT {self.users_files}")
