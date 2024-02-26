@@ -163,7 +163,7 @@ class Server:
 
 
 if __name__ == "__main__":
-    server = Server('LocalHost', 12345, "MTE4Mjk5MTE2MTg3NTQ5NzAyMQ.GP5L7H.QugkhJSZCd3yTl_eFGpKdKxjsKGEt_cNbuGS9Q")
+    server = Server('LocalHost', 12345, "")
     server.start()
     while True:
         print("a")
