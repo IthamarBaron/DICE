@@ -14,7 +14,8 @@ class Server:
         self.host = host
         self.port = port
         self.packet_handlers = [None, self.handle_sign_up_request, self.handle_file_and_send_to_discord,
-                                self.handle_file_request, self.handle_deletion_request, self.handle_login_request]
+                                self.handle_file_request, self.handle_deletion_request, self.handle_login_request,
+                                self.handle_files_for_initiation]
         self.database = Database("Dice-Database.db")
         self.bot_instance = DiscordBot.DiscordBot(token)
         thread = threading.Thread(target=self.bot_instance.run_discord_bot, daemon=True)
@@ -163,6 +164,20 @@ class Server:
         print(row)
         data_to_send = f"{1}{self.zero_fill_length(str(packet))}{json.dumps(packet)}".encode()
         self.client_socket.sendall(data_to_send)
+
+
+    def handle_files_for_initiation(self, data_length):
+        data = self.client_socket.recv(data_length).decode()
+        data = json.loads(data)
+        files = self.database.get_files_from_id(data["channel_id"])
+
+        packet = {
+            "files": files
+        }
+        print(f"Files: {files}")
+        data_to_send = f"{3}{self.zero_fill_length(str(packet))}{json.dumps(packet)}".encode()
+        self.client_socket.send(data_to_send)
+
 
     # endregion Handlers
 

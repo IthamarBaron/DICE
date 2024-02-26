@@ -15,7 +15,6 @@ class ManagerUI:
         self.current_frame = None
         self.client_instance = None  # type: Client
         self.connect_frame()
-        self.users_files = {}
         self.display_files = []
 
     # region FRAMES
@@ -218,7 +217,7 @@ class ManagerUI:
     def reload_files(self):
         # Clear existing labels and buttons
         self.clear_file_labels()
-        # Update underlying data (self.users_files)
+        # Update underlying data (self.client_instance.users_files)
         self.initiate_users_files()
         # Instantiate new labels and buttons using updated data
         self.instantiate_file_labels()
@@ -233,17 +232,18 @@ class ManagerUI:
 
 #TODO: ALSO MAKE THIS SERER SIDE
     def initiate_users_files(self):
-        files = self.client_instance.database.get_files_from_id(self.client_instance.user_data[2])
+        self.client_instance.request_user_files()
+        files = self.client_instance.users_files
         print(f" user_data = {self.client_instance.user_data}")
         print(files)
-        self.users_files = {}  # clearing the dict before instantiation
+        self.client_instance.users_files = {}  # clearing the dict before instantiation
         for file in files:
-            self.users_files[file[0]] = file[1]
-        print(F"INNINT {self.users_files}")
+            self.client_instance.users_files[file[0]] = file[1]
+        print(F"INNINT {self.client_instance.users_files}")
 
     def instantiate_file_labels(self):
-        print(f"instantiating {self.users_files}")
-        for file_name in self.users_files.keys():
+        print(f"instantiating {self.client_instance.users_files}")
+        for file_name in self.client_instance.users_files.keys():
             # Frame to group components for each file
             file_frame = tk.Frame(self.root)
             file_frame.pack()

@@ -11,7 +11,9 @@ class Client:
         self.temp_start_time = None
         self.temp_end_time = None
         self.user_data = None
-        self.packet_handlers = [None, self.handle_login_data, self.get_files_from_server]
+        self.users_files = {}
+        self.packet_handlers = [None, self.handle_login_data, self.get_files_from_server,
+                                self.handle_files_for_initiation]
 
     def connect_to_server(self) -> None:
         """
@@ -140,6 +142,23 @@ class Client:
         data_to_send = f"{5}{Client.zero_fill_length(str(packet))}{json.dumps(packet)}".encode()
         self.client_socket.send(data_to_send)
         self.receive_data() # TODO: add another handler for the login details recivement
+
+    def request_user_files(self):
+
+        packet = {
+            "channel_id": self.user_data[2]
+        }
+
+        data_to_send = f"{6}{self.zero_fill_length(str(packet))}{json.dumps(packet)}".encode()
+        self.client_socket.send(data_to_send)
+        self.receive_data()
+
+    def handle_files_for_initiation(self, data_length):
+        data = self.client_socket.recv(data_length).decode()
+        data = json.loads(data)
+        self.users_files = data["files"]
+        print(f"USERS FILES: {self.users_files}")
+
 
     def handle_login_data(self, data_length):
         data = self.client_socket.recv(data_length).decode()
