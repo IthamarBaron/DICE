@@ -105,7 +105,8 @@ class Client:
         data_to_send = f"{1}{Client.zero_fill_length(str(packet))}{json.dumps(packet)}".encode()
         self.client_socket.send(data_to_send)
 
-        response = self.client_socket.recv(1)
+        response = self.client_socket.recv(19)
+        print(response)
         if response == 0:
             return False
         else:

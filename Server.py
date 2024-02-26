@@ -3,9 +3,7 @@ import json
 
 from DatabaseManager import Database
 
-import tqdm
 import socket
-import warnings
 import DiscordBot
 import threading
 
@@ -102,9 +100,10 @@ class Server:
         else:
             # TODO: acutally make it sign up from the serverside insted of the client omfg cant belive ive missed this
             print("username available")
-            temp = asyncio.run_coroutine_threadsafe(self.bot_instance.create_new_storage_area(data["username"]),
+            attempt_channel_creation = asyncio.run_coroutine_threadsafe(self.bot_instance.create_new_storage_area(data["username"]),
                                                     self.bot_instance.bot.loop)
-            channel_id = temp.result()
+            channel_id = attempt_channel_creation.result()
+            self.database.create_new_account(data["username"], data["password"], channel_id)
             print(channel_id)
             data = f"{channel_id}"
             self.client_socket.send(data.encode())
@@ -164,7 +163,7 @@ class Server:
 
 
 if __name__ == "__main__":
-    server = Server('LocalHost', 12345, "")
+    server = Server('LocalHost', 12345, "MTE4Mjk5MTE2MTg3NTQ5NzAyMQ.GP5L7H.QugkhJSZCd3yTl_eFGpKdKxjsKGEt_cNbuGS9Q")
     server.start()
     while True:
         print("a")
