@@ -4,6 +4,7 @@ import time
 import socket
 
 
+
 class Client:
     def __init__(self, host, port):
         self.host = host
@@ -12,7 +13,8 @@ class Client:
         self.temp_end_time = None
         self.user_data = None
         self.users_files = {}
-        self.packet_handlers = [None, self.handle_login_data, self.get_files_from_server,
+        self.reload_files_flag = False
+        self.packet_handlers = [None, self.handle_login_data, self.get_file_from_server,
                                 self.handle_files_for_initiation]
 
     def connect_to_server(self) -> None:
@@ -43,7 +45,7 @@ class Client:
         except Exception as e:
             print(f"Error receiving data: {e}")
 
-    def get_files_from_server(self, data_length):
+    def get_file_from_server(self, data_length):
         try:
             file_info = self.client_socket.recv(int(data_length)).decode()
             file_info = json.loads(file_info)
@@ -62,7 +64,6 @@ class Client:
                 file.write(part_of_file)
                 received_bytes_count += len(part_of_file)
             file.close()
-
             self.temp_end_time = time.time()
             delta_time = int(self.temp_end_time - self.temp_start_time)
             print(f"time time elapsed: {delta_time}")
@@ -94,6 +95,7 @@ class Client:
         data_to_send = f"{2}{Client.zero_fill_length(str(packet))}{json.dumps(packet)}".encode()
         self.client_socket.send(data_to_send)
         self.client_socket.sendall(file_data)
+        self.reload_files_flag = True
 
     def request_signup(self, username, password):
 
@@ -119,6 +121,7 @@ class Client:
         print("method called")
         data_to_send = f"{4}{Client.zero_fill_length(str(packet))}{json.dumps(packet)}".encode()
         self.client_socket.send(data_to_send)
+        self.reload_files_flag = True
         print("Sent file request")
 
     def request_download_file(self, file_name, channel_id):
@@ -131,6 +134,7 @@ class Client:
         data_to_send = f"{3}{Client.zero_fill_length(str(packet))}{json.dumps(packet)}".encode()
         self.client_socket.send(data_to_send)
         self.receive_data()
+        self.reload_files_flag = True
 
     def request_login(self, username, password):
 
@@ -157,7 +161,7 @@ class Client:
         data = self.client_socket.recv(data_length).decode()
         data = json.loads(data)
         self.users_files = data["files"]
-        print(f"USERS FILES: {self.users_files}")
+        self.reload_files_flag = True
 
 
     def handle_login_data(self, data_length):

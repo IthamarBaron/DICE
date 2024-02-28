@@ -147,6 +147,8 @@ class ManagerUI:
         self.reload_files_buttontt.pack(anchor="se")
 
         self.instantiate_file_labels()
+        self.root.after(200, self.check_reload_flag)
+
 
     # endregion FRAMES
 
@@ -186,10 +188,8 @@ class ManagerUI:
         print(f"attempting login as {username} with {password}")
         self.client_instance.request_login(username, password)
         login_data = self.client_instance.user_data
-        print(f"login_data: {login_data}")
         if login_data:
             self.client_instance.user_data = login_data
-            print(f"userdata: {self.client_instance.user_data}")
             #  if login is successful we move on to the app
             self.current_frame.destroy()
             self.main_application_frame()
@@ -230,19 +230,22 @@ class ManagerUI:
 
     # region File-display
 
+    def check_reload_flag(self):
+        if self.client_instance.reload_files_flag:
+            self.reload_files()
+            self.client_instance.reload_files_flag = False
+        self.root.after(20, self.check_reload_flag)
+
+
 #TODO: ALSO MAKE THIS SERER SIDE
     def initiate_users_files(self):
         self.client_instance.request_user_files()
         files = self.client_instance.users_files
-        print(f" user_data = {self.client_instance.user_data}")
-        print(files)
         self.client_instance.users_files = {}  # clearing the dict before instantiation
         for file in files:
             self.client_instance.users_files[file[0]] = file[1]
-        print(F"INNINT {self.client_instance.users_files}")
 
     def instantiate_file_labels(self):
-        print(f"instantiating {self.client_instance.users_files}")
         for file_name in self.client_instance.users_files.keys():
             # Frame to group components for each file
             file_frame = tk.Frame(self.root)
