@@ -17,22 +17,24 @@ class Client:
         self.packet_handlers = [None, self.handle_login_data, self.get_file_from_server,
                                 self.handle_files_for_initiation]
 
-    def connect_to_server(self) -> None:
+    def connect_to_server(self) -> bool:
         """
         Connect to the server at the specified host and port.
 
         This method creates a client socket, connects it to the server, and prints a success
         message upon successful connection.
 
-        :return: None
+        :return: Bool
         """
 
         try:
             self.client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             self.client_socket.connect((self.host, self.port))
             print(f"Connected to the server at {self.host}:{self.port}")
+            return True
         except Exception as e:
             print(f"Connection error: {str(e)}")
+            return False
 
     def receive_data(self):
         try:
@@ -175,7 +177,7 @@ class Client:
         length_str = str(length).zfill(width)
         return length_str
 
-
+"""
 if __name__ == "__main__":
     client = Client('LocalHost', 12345)
-    client.connect_to_server()
+    client.connect_to_server()"""

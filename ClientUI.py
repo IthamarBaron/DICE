@@ -47,11 +47,17 @@ class ManagerUI:
         self.entry.insert(0, "127.0.0.1")
         self.entry.pack(pady=20)
 
+        self.error_label_0 = tk.Label(self.current_frame, text="", font=("Arial", 12, "bold"), fg="#cf3e3e",
+                                    bg=BACKGROUND_COLOR)
+
+        self.error_label_0.pack()
+
         # Connect Button
         connect_button = tk.Button(self.current_frame, text="Connect", command=self.connect_to_server, bg="#4CAF50",
                                    fg="black",
                                    bd=2, relief="solid", width=15, height=2)
         connect_button.pack(pady=20)
+
 
         # labels
         label_dice = tk.Label(self.current_frame, text="DICE", font=("Rubik", 10, "bold", "underline"), fg="white",
@@ -158,7 +164,11 @@ class ManagerUI:
         ip = self.entry.get()
         print(f"Attempting to connect to: {ip}")
         self.client_instance = Client(ip, 12345)
-        self.client_instance.connect_to_server()
+        is_successful = self.client_instance.connect_to_server()
+
+        if not is_successful:
+            self.error_label_0.config(text="Connection failed, Try again")
+            return
 
         # If connection is successful, switch to the file upload frame
         self.current_frame.destroy()
@@ -179,6 +189,7 @@ class ManagerUI:
                 thread = threading.Thread(target=self.client_instance.send_file_to_server,
                                           args=(self.uploded_file_path, self.client_instance.user_data[2]), daemon=True)
                 thread.start()
+            print("Finished sending method!")
         except Exception as e:
             print(f"Error sending the file to the server: {e}")
 
