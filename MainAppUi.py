@@ -145,41 +145,6 @@ button_2.place(
     height=37.0
 )
 
-button_image_3 = PhotoImage(
-    file=relative_to_assets("button_3.png"))
-button_3 = Button(
-    image=button_image_3,
-    borderwidth=0,
-    highlightthickness=0,
-    command=lambda: print("button_3 clicked"),
-    relief="flat",
-    activebackground="#3678B6",
-    activeforeground="#3678B6"
-)
-button_3.place(
-    x=481.0,
-    y=606.0,
-    width=148.0,
-    height=38.0
-)
-
-button_image_4 = PhotoImage(
-    file=relative_to_assets("button_4.png"))
-button_4 = Button(
-    image=button_image_4,
-    borderwidth=0,
-    highlightthickness=0,
-    command=lambda: print("button_4 clicked"),
-    relief="flat",
-    activebackground="#3678B6",
-    activeforeground="#3678B6"
-)
-button_4.place(
-    x=479.0,
-    y=496.0,
-    width=148.0,
-    height=37.0
-)
 
 button_image_5 = PhotoImage(
     file=relative_to_assets("button_5.png"))
@@ -196,42 +161,6 @@ button_5.place(
     x=477.0,
     y=388.0,
     width=148.0,
-    height=37.0
-)
-
-button_image_6 = PhotoImage(
-    file=relative_to_assets("button_6.png"))
-button_6 = Button(
-    image=button_image_6,
-    borderwidth=0,
-    highlightthickness=0,
-    command=lambda: print("button_6 clicked"),
-    relief="flat",
-    activebackground="#3678B6",
-    activeforeground="#3678B6"
-)
-button_6.place(
-    x=319.0,
-    y=607.0,
-    width=149.0,
-    height=37.0
-)
-
-button_image_7 = PhotoImage(
-    file=relative_to_assets("button_7.png"))
-button_7 = Button(
-    image=button_image_7,
-    borderwidth=0,
-    highlightthickness=0,
-    command=lambda: print("button_7 clicked"),
-    relief="flat",
-    activebackground="#3678B6",
-    activeforeground="#3678B6"
-)
-button_7.place(
-    x=317.0,
-    y=496.0,
-    width=149.0,
     height=37.0
 )
 
@@ -278,38 +207,5 @@ canvas.create_text(
     font=("MontserratRoman SemiBold", 24 * -1)
 )
 
-canvas.create_text(
-    123.0,
-    499.0,
-    anchor="nw",
-    text="File Name.png\n",
-    fill="#626262",
-    font=("MontserratRoman SemiBold", 24 * -1)
-)
-
-canvas.create_text(
-    123.0,
-    606.0,
-    anchor="nw",
-    text="File Name.mp4\n",
-    fill="#626262",
-    font=("MontserratRoman SemiBold", 24 * -1)
-)
-
-image_image_4 = PhotoImage(
-    file=relative_to_assets("image_4.png"))
-image_4 = canvas.create_image(
-    78.0,
-    504.0,
-    image=image_image_4
-)
-
-image_image_5 = PhotoImage(
-    file=relative_to_assets("image_5.png"))
-image_5 = canvas.create_image(
-    78.0,
-    618.0,
-    image=image_image_5
-)
 window.resizable(False, False)
 window.mainloop()

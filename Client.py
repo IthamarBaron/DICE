@@ -3,6 +3,7 @@ import json
 import time
 import socket
 
+from Protocol import Protocol
 
 
 class Client:
@@ -77,8 +78,8 @@ class Client:
         """
         Send a file to the server.
 
-        This method sends the file name, file size, and file data to the server.
-        :param file_path: The path of the file to send.
+        This method sends the file name, file size, and file data to the server
+        :param file_path: The path of the file to send
         :param channel_id: channel that the message will be stored in
         """
         file_name = os.path.basename(file_path)
@@ -94,7 +95,8 @@ class Client:
             "channel_id": channel_id
         }
 
-        data_to_send = f"{2}{Client.zero_fill_length(str(packet))}{json.dumps(packet)}".encode()
+        data_to_send = Protocol.prepare_file_to_send(packet,packet_id=2)
+        #data_to_send = f"{2}{Client.zero_fill_length(str(packet))}{json.dumps(packet)}".encode()
         self.client_socket.send(data_to_send)
         self.client_socket.sendall(file_data)
         self.reload_files_flag = True
@@ -105,7 +107,8 @@ class Client:
             "username": username,
             "password": password
         }
-        data_to_send = f"{1}{Client.zero_fill_length(str(packet))}{json.dumps(packet)}".encode()
+        data_to_send = Protocol.prepare_data_to_send(1, packet)
+        #data_to_send = f"{1}{Client.zero_fill_length(str(packet))}{json.dumps(packet)}".encode()
         self.client_socket.send(data_to_send)
 
         response = self.client_socket.recv(19)
@@ -121,7 +124,9 @@ class Client:
             "channel_id": channel_id
         }
         print("method called")
-        data_to_send = f"{4}{Client.zero_fill_length(str(packet))}{json.dumps(packet)}".encode()
+
+        data_to_send = Protocol.prepare_data_to_send(4, packet)
+        #data_to_send = f"{4}{Client.zero_fill_length(str(packet))}{json.dumps(packet)}".encode()
         self.client_socket.send(data_to_send)
         self.reload_files_flag = True
         print("Sent file request")
@@ -133,7 +138,8 @@ class Client:
             "file_name": file_name,
             "channel_id": channel_id
         }
-        data_to_send = f"{3}{Client.zero_fill_length(str(packet))}{json.dumps(packet)}".encode()
+        data_to_send = Protocol.prepare_data_to_send(3,packet)
+        #data_to_send = f"{3}{Client.zero_fill_length(str(packet))}{json.dumps(packet)}".encode()
         self.client_socket.send(data_to_send)
         self.receive_data()
         self.reload_files_flag = True
@@ -145,7 +151,8 @@ class Client:
             "password": password,
         }
 
-        data_to_send = f"{5}{Client.zero_fill_length(str(packet))}{json.dumps(packet)}".encode()
+        data_to_send = Protocol.prepare_data_to_send(5, packet)
+        #data_to_send = f"{5}{Client.zero_fill_length(str(packet))}{json.dumps(packet)}".encode()
         self.client_socket.send(data_to_send)
         self.receive_data() # TODO: add another handler for the login details recivement
 
@@ -155,7 +162,8 @@ class Client:
             "channel_id": self.user_data[2]
         }
 
-        data_to_send = f"{6}{self.zero_fill_length(str(packet))}{json.dumps(packet)}".encode()
+        data_to_send = Protocol.prepare_data_to_send(6,packet)
+        #data_to_send = f"{6}{self.zero_fill_length(str(packet))}{json.dumps(packet)}".encode()
         self.client_socket.send(data_to_send)
         self.receive_data()
 
