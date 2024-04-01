@@ -1,6 +1,7 @@
 import asyncio
 import json
 
+import Protocol
 from DatabaseManager import Database
 
 import socket
@@ -28,6 +29,7 @@ class Server:
         Upon connection, prints client information.
         :return: None
         """
+        Protocol.Protocol.generate_key()
         server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         server_socket.bind((self.host, self.port))
         server_socket.listen()
@@ -35,6 +37,8 @@ class Server:
 
         self.client_socket, _ = server_socket.accept()
         print(f"New client connected: {self.client_socket.getpeername()}")
+        self.receive_data()
+
 
     def receive_data(self):
         try:
@@ -70,6 +74,7 @@ class Server:
                     print("Connection lost")
                     return [0, 0, 0]
                 file_bytes += part_of_file
+            file_bytes = Protocol.Protocol.decrypt_incoming_data(file_bytes)
             return [file_name, file_bytes, channel_id]
         except Exception as e:
             print(f"Error receive file: {e}")
@@ -88,7 +93,9 @@ class Server:
 
     def handle_sign_up_request(self, data_length):
         data = self.client_socket.recv(int(data_length)).decode()
+        data = Protocol.Protocol.decrypt_incoming_data(data)
         data = json.loads(data)
+
         print(data)
 
         if not self.database.is_username_availability(data["username"]):
@@ -116,10 +123,11 @@ class Server:
 
     def handle_file_request(self, data_length):
         requested_file_info = self.client_socket.recv(int(data_length)).decode()
+        requested_file_info = Protocol.Protocol.decrypt_incoming_data(requested_file_info)
         requested_file_info = json.loads(requested_file_info)  # file_name , channel_id
 
         message_id = self.database.get_message_id_by_name(requested_file_info["file_name"],
-                                                      int(requested_file_info["channel_id"]))
+                                                          int(requested_file_info["channel_id"]))
 
         if message_id != 0:
             temp = asyncio.run_coroutine_threadsafe(
@@ -141,8 +149,9 @@ class Server:
 
     def handle_deletion_request(self, data_length):
         data = self.client_socket.recv(data_length).decode()
-        print(f"Data: {data}")
-        data = json.loads(data)  # file_name | channel_id
+        data = Protocol.Protocol.decrypt_incoming_data(data)
+        data = json.loads(data)
+
         message_id = self.database.get_message_id_by_name(data["file_name"], int(data["channel_id"]))
 
         proc = asyncio.run_coroutine_threadsafe(self.bot_instance.delete_file_from_chat(message_id,
@@ -154,8 +163,13 @@ class Server:
         # TODO: make threaded
 
     def handle_login_request(self, data_length):
-        data = self.client_socket.recv(data_length).decode()
-        data = json.loads(data)
+        print("================HANDLE_LOGIN_REQUEST==========")
+        encrypted_packet = self.client_socket.recv(data_length)
+        print(f"encrypted data = {encrypted_packet }")
+        data = Protocol.Protocol.decrypt_incoming_data(encrypted_packet )
+        print(f"decrypted data = {data}")
+        data = json.loads(data.decode())
+        print(f"loaded data = {data}")
 
         row = self.database.attempt_login(data["username"], data["password"])
         packet = {
@@ -165,9 +179,9 @@ class Server:
         data_to_send = f"{1}{self.zero_fill_length(str(packet))}{json.dumps(packet)}".encode()
         self.client_socket.sendall(data_to_send)
 
-
     def handle_files_for_initiation(self, data_length):
         data = self.client_socket.recv(data_length).decode()
+        data = Protocol.Protocol.decrypt_incoming_data(data)
         data = json.loads(data)
         files = self.database.get_files_from_id(data["channel_id"])
 
@@ -192,5 +206,4 @@ if __name__ == "__main__":
     server = Server('LocalHost', 12345, "")
     server.start()
     while True:
-        print("a")
         server.receive_data()

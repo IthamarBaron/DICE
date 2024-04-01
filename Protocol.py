@@ -22,6 +22,17 @@ class Protocol:
         Protocol.key = Fernet.generate_key()
         Protocol.fernet_object = Fernet(key=Protocol.key)
         Protocol.debug_protocol()
+        # Save the key to a file
+        with open("encryption_key.txt", "wb") as key_file:
+            key_file.write(Protocol.key)
+
+    @staticmethod
+    def load_key():
+        # Load the key from the file
+        with open("encryption_key.txt", "rb") as key_file:
+            Protocol.key = key_file.read()
+            Protocol.fernet_object = Fernet(key=Protocol.key)
+        Protocol.debug_protocol()
 
     @staticmethod
     def zero_fill_length(input_string, width=4):
@@ -42,11 +53,17 @@ class Protocol:
         :return: data for sending
         """
 
-        Protocol.debug_protocol()
-
-        data_to_encrypt = f"{json.dumps(packet)}".encode()
+        data_to_encrypt = json.dumps(packet).encode()
         encrypted_packet = Protocol.fernet_object.encrypt(data_to_encrypt)
-        data_to_send = f"{packet_id}{Protocol.zero_fill_length(str(packet))}{encrypted_packet}".encode()
+        encrypted_packet_str = encrypted_packet.decode()  # Convert bytes to string
+        packet_length = Protocol.zero_fill_length(encrypted_packet_str)  # Calculate packet length
+        data_to_send = f"{packet_id}{packet_length}{encrypted_packet_str}".encode()
+        print(f"============[PROTOCOL DEBUG]============")
+        print(f"ORIGINAL DATA  = {data_to_encrypt}")
+        print(f"ENCRYPTED PACKET = {encrypted_packet}")
+        print(f"DATA_TO_SEND = {data_to_send}")
+        print(f"============[PROTOCOL DEBUG]============")
+
         return data_to_send
 
     @staticmethod
@@ -70,5 +87,14 @@ class Protocol:
         :param data: data to decrypt
         :return: decrypted data
         """
+        retdata = None
+        print(f"TYPE OF DATA: {type(data)}")
+        print("DECRYPTING SHIT")
+        try:
+            retdata = Protocol.fernet_object.decrypt(data)
+        except Exception as e:
+            print(f"DECRYPTING ERROR {e}")
+        return retdata
 
-        return Protocol.fernet_object.decrypt(data)
+
+

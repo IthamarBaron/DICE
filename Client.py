@@ -32,6 +32,7 @@ class Client:
             self.client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             self.client_socket.connect((self.host, self.port))
             print(f"Connected to the server at {self.host}:{self.port}")
+            Protocol.load_key()
             return True
         except Exception as e:
             print(f"Connection error: {str(e)}")
