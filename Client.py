@@ -96,9 +96,10 @@ class Client:
             "channel_id": channel_id
         }
 
-        data_to_send = Protocol.prepare_file_to_send(packet,packet_id=2)
+        print(f"FILEDATA {packet}")
+        file_info = Protocol.prepare_file_info_to_send(packet, packet_id=2)
         #data_to_send = f"{2}{Client.zero_fill_length(str(packet))}{json.dumps(packet)}".encode()
-        self.client_socket.send(data_to_send)
+        self.client_socket.send(file_info)
         self.client_socket.sendall(file_data)
         self.reload_files_flag = True
 

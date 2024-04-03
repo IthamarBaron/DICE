@@ -58,9 +58,10 @@ class Server:
         :return: None
         """
         try:
-            file_info = self.client_socket.recv(int(data_length)).decode()
-            file_info = json.loads(file_info)
-
+            data = self.client_socket.recv(int(data_length)).decode()
+            data = Protocol.Protocol.decrypt_incoming_data(data)
+            file_info = json.loads(data)
+            print(f"FILE INFO {file_info}")
             file_name = file_info["file_name"]
             file_size = int(file_info["file_size"])
             channel_id = int(file_info["channel_id"])
@@ -74,7 +75,8 @@ class Server:
                     print("Connection lost")
                     return [0, 0, 0]
                 file_bytes += part_of_file
-            file_bytes = Protocol.Protocol.decrypt_incoming_data(file_bytes)
+            #file_bytes = Protocol.Protocol.decrypt_incoming_data(file_bytes)
+            print(f"Returning: {[file_name, file_bytes, channel_id]}")
             return [file_name, file_bytes, channel_id]
         except Exception as e:
             print(f"Error receive file: {e}")
@@ -90,6 +92,11 @@ class Server:
             self.database.new_file_in_channel(reference_message_info[0], reference_message_info[1], channel_id)
 
     # region Handlers
+    def handle_file_and_send_to_discord(self, data_length):
+        file_data = self.receive_file(data_length)  # fil name | file content | channelID
+        print(f"FILE_DATA = {file_data}")
+        if file_data[1]:
+            self.send_files_to_discord(file_data[0], file_data[1], file_data[2])
 
     def handle_sign_up_request(self, data_length):
         data = self.client_socket.recv(int(data_length)).decode()
@@ -115,11 +122,7 @@ class Server:
             data = f"{channel_id}"
             self.client_socket.send(data.encode())
 
-    def handle_file_and_send_to_discord(self, data_length):
 
-        file_data = self.receive_file(data_length)  # fil name | file content | channelID
-        if file_data[1]:
-            self.send_files_to_discord(file_data[0], file_data[1], file_data[2])
 
     def handle_file_request(self, data_length):
         requested_file_info = self.client_socket.recv(int(data_length)).decode()
@@ -163,13 +166,9 @@ class Server:
         # TODO: make threaded
 
     def handle_login_request(self, data_length):
-        print("================HANDLE_LOGIN_REQUEST==========")
         encrypted_packet = self.client_socket.recv(data_length)
-        print(f"encrypted data = {encrypted_packet }")
         data = Protocol.Protocol.decrypt_incoming_data(encrypted_packet )
-        print(f"decrypted data = {data}")
         data = json.loads(data.decode())
-        print(f"loaded data = {data}")
 
         row = self.database.attempt_login(data["username"], data["password"])
         packet = {
@@ -180,9 +179,9 @@ class Server:
         self.client_socket.sendall(data_to_send)
 
     def handle_files_for_initiation(self, data_length):
-        data = self.client_socket.recv(data_length).decode()
-        data = Protocol.Protocol.decrypt_incoming_data(data)
-        data = json.loads(data)
+        encrypted_packet = self.client_socket.recv(data_length)
+        data = Protocol.Protocol.decrypt_incoming_data(encrypted_packet )
+        data = json.loads(data.decode())
         files = self.database.get_files_from_id(data["channel_id"])
 
         packet = {

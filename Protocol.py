@@ -58,16 +58,11 @@ class Protocol:
         encrypted_packet_str = encrypted_packet.decode()  # Convert bytes to string
         packet_length = Protocol.zero_fill_length(encrypted_packet_str)  # Calculate packet length
         data_to_send = f"{packet_id}{packet_length}{encrypted_packet_str}".encode()
-        print(f"============[PROTOCOL DEBUG]============")
-        print(f"ORIGINAL DATA  = {data_to_encrypt}")
-        print(f"ENCRYPTED PACKET = {encrypted_packet}")
-        print(f"DATA_TO_SEND = {data_to_send}")
-        print(f"============[PROTOCOL DEBUG]============")
 
         return data_to_send
 
     @staticmethod
-    def prepare_file_to_send(packet, packet_id=2):
+    def prepare_file_info_to_send(packet, packet_id=2):
         """
         responsible for preparing file data for sending to the server
         :param packet_id: packet id for handling purposes on the receiving side
@@ -76,25 +71,26 @@ class Protocol:
         :return: file data for sending
         """
 
-        data_to_encrypt = f"{packet_id}{Protocol.zero_fill_length(str(packet))}{json.dumps(packet)}".encode()
-        data_to_send = Protocol.fernet_object.encrypt(data_to_encrypt)
+        data_to_encrypt = json.dumps(packet).encode()
+        encrypted_packet = Protocol.fernet_object.encrypt(data_to_encrypt)
+        encrypted_packet_str = encrypted_packet.decode()  # Convert bytes to string
+        packet_length = Protocol.zero_fill_length(encrypted_packet_str)  # Calculate packet length
+        data_to_send = f"{packet_id}{packet_length}{encrypted_packet_str}".encode()
         return data_to_send
 
     @staticmethod
-    def decrypt_incoming_data(data):
+    def decrypt_incoming_data(encrypted_data):
         """
         decrypts incoming data using the fernet key
-        :param data: data to decrypt
+        :param encrypted_data: data to decrypt
         :return: decrypted data
         """
-        retdata = None
-        print(f"TYPE OF DATA: {type(data)}")
-        print("DECRYPTING SHIT")
+        decrypted_data = None
         try:
-            retdata = Protocol.fernet_object.decrypt(data)
+            decrypted_data = Protocol.fernet_object.decrypt(encrypted_data)
         except Exception as e:
             print(f"DECRYPTING ERROR {e}")
-        return retdata
+        return decrypted_data
 
 
 
