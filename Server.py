@@ -61,7 +61,6 @@ class Server:
             data = self.client_socket.recv(int(data_length)).decode()
             data = Protocol.Protocol.decrypt_incoming_data(data)
             file_info = json.loads(data)
-            print(f"FILE INFO {file_info}")
             file_name = file_info["file_name"]
             file_size = int(file_info["file_size"])
             channel_id = int(file_info["channel_id"])
@@ -76,7 +75,6 @@ class Server:
                     return [0, 0, 0]
                 file_bytes += part_of_file
             #file_bytes = Protocol.Protocol.decrypt_incoming_data(file_bytes)
-            print(f"Returning: {[file_name, file_bytes, channel_id]}")
             return [file_name, file_bytes, channel_id]
         except Exception as e:
             print(f"Error receive file: {e}")
@@ -94,7 +92,6 @@ class Server:
     # region Handlers
     def handle_file_and_send_to_discord(self, data_length):
         file_data = self.receive_file(data_length)  # fil name | file content | channelID
-        print(f"FILE_DATA = {file_data}")
         if file_data[1]:
             self.send_files_to_discord(file_data[0], file_data[1], file_data[2])
 
