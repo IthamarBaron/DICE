@@ -12,6 +12,7 @@ import threading
 class Server:
 
     def __init__(self, host, port, token):
+        self.server_protocol_instance = None
         self.host = host
         self.port = port
         self.packet_handlers = [None, self.handle_sign_up_request, self.handle_file_and_send_to_discord,
@@ -29,14 +30,23 @@ class Server:
         Upon connection, prints client information.
         :return: None
         """
-        Protocol.Protocol.generate_key()
+
+        Protocol.Protocol.generate_key() # SWAP LATER
+        self.server_protocol_instance = Protocol.ServerProtocol()
+        self.server_protocol_instance.create_server_keys()
         server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         server_socket.bind((self.host, self.port))
         server_socket.listen()
         print(f"Server is listening for connections")
-
+        print(f"Server public key in server {self.server_protocol_instance.get_public_key()}")
         self.client_socket, _ = server_socket.accept()
         print(f"New client connected: {self.client_socket.getpeername()}")
+
+        packet = {
+            "server_public_key": self.server_protocol_instance.get_public_key(),
+        }
+        data_to_send = f"{0}{self.zero_fill_length(str(packet))}{json.dumps(packet)}".encode()
+        self.client_socket.send(data_to_send)
         self.receive_data()
 
 

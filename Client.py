@@ -181,6 +181,13 @@ class Client:
         data = json.loads(data)
         print(data["row"])
         self.user_data = data["row"]
+
+    def handle_server_key(self,data_length):
+        data = self.client_socket.recv(data_length).decode()
+        data = json.load(data)
+        self.server_publc_key = data["server_public_key"]
+        print(f"Server public key in client {self.server_publc_key}")
+
     @staticmethod
     def zero_fill_length(input_string, width=4):
         length = len(input_string)
