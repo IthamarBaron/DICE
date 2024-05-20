@@ -31,7 +31,7 @@ class Server:
         :return: None
         """
 
-        Protocol.Protocol.generate_key() # SWAP LATER
+        Protocol.Protocol.generate_key() #TODO: SWAP LATER
         self.server_protocol_instance = Protocol.ServerProtocol()
         self.server_protocol_instance.create_server_keys()
         server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -43,10 +43,10 @@ class Server:
         print(f"New client connected: {self.client_socket.getpeername()}")
 
         packet = {
-            "server_public_key": self.server_protocol_instance.get_public_key(),
+            "server_public_key": str(self.server_protocol_instance.get_public_key()),
         }
         data_to_send = f"{0}{self.zero_fill_length(str(packet))}{json.dumps(packet)}".encode()
-        self.client_socket.send(data_to_send)
+        self.client_socket.sendall(data_to_send)
         self.receive_data()
 
 

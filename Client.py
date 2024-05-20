@@ -15,7 +15,7 @@ class Client:
         self.user_data = None
         self.users_files = {}
         self.reload_files_flag = False
-        self.packet_handlers = [None, self.handle_login_data, self.get_file_from_server,
+        self.packet_handlers = [self.handle_server_key, self.handle_login_data, self.get_file_from_server,
                                 self.handle_files_for_initiation]
 
     def connect_to_server(self) -> bool:
@@ -45,6 +45,7 @@ class Client:
             print(f"packetID {packet_id}")
             data_length = int(self.client_socket.recv(4).decode())
             print(f"data_length {data_length}")
+            print(f"calling {str(self.packet_handlers[packet_id])}")
             self.packet_handlers[packet_id](data_length)
         except Exception as e:
             print(f"Error receiving data: {e}")
@@ -184,7 +185,7 @@ class Client:
 
     def handle_server_key(self,data_length):
         data = self.client_socket.recv(data_length).decode()
-        data = json.load(data)
+        data = json.loads(data)
         self.server_publc_key = data["server_public_key"]
         print(f"Server public key in client {self.server_publc_key}")
 
@@ -194,7 +195,9 @@ class Client:
         length_str = str(length).zfill(width)
         return length_str
 
-"""
-if __name__ == "__main__":
+
+"""if __name__ == "__main__":
     client = Client('LocalHost', 12345)
-    client.connect_to_server()"""
+    client.connect_to_server()
+    while True:
+        client.receive_data()"""

@@ -81,7 +81,7 @@ class ManagerUI:
         self.current_frame = tk.Frame(self.root, bg=BACKGROUND_COLOR)
         self.current_frame.pack(expand=True, fill=tk.BOTH)
         self.root.geometry("500x400")
-
+        print(f"[DEBUG] SERVER KEY IN CLIENT: {self.client_instance.server_publc_key}")
         # Title
         title_label = tk.Label(self.current_frame, text="LOG IN/SIGN UP", font=("Rubik", 25, "bold"),
                                bg=BACKGROUND_COLOR, fg="white")
