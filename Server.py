@@ -15,6 +15,8 @@ class Server:
         self.server_protocol_instance = None
         self.host = host
         self.port = port
+        self.clients = {}
+        self.client_threads = []
         self.packet_handlers = [None, self.handle_sign_up_request, self.handle_file_and_send_to_discord,
                                 self.handle_file_request, self.handle_deletion_request, self.handle_login_request,
                                 self.handle_files_for_initiation]
@@ -31,44 +33,57 @@ class Server:
         :return: None
         """
 
+
         Protocol.Protocol.generate_key() #TODO: SWAP LATER
         self.server_protocol_instance = Protocol.ServerProtocol()
         self.server_protocol_instance.create_server_keys()
+        print(f"Server public key in server {self.server_protocol_instance.get_public_key()}")
         server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         server_socket.bind((self.host, self.port))
-        server_socket.listen()
-        print(f"Server is listening for connections")
-        print(f"Server public key in server {self.server_protocol_instance.get_public_key()}")
-        self.client_socket, _ = server_socket.accept()
-        print(f"New client connected: {self.client_socket.getpeername()}")
+        connected_clients = 0
+        while len(self.clients) <= 2:
 
+            server_socket.listen()
+            print(f"Server is listening for connections")
+            client_socket, _ = server_socket.accept()  # ACCEPT CONNECTION
+            print(f"New client connected: {client_socket.getpeername()}")
+            self.clients[connected_clients] = client_socket  # Add the client to the dict
+
+            new_client_thread = threading.Thread(target=self.run_server_for_client, args=(connected_clients,), daemon=True)
+            self.client_threads.append(new_client_thread)
+            new_client_thread.start()
+            connected_clients += 1
+
+
+    def run_server_for_client(self, client_id):
         packet = {
             "server_public_key": str(self.server_protocol_instance.get_public_key()),
         }
         data_to_send = f"{0}{self.zero_fill_length(str(packet))}{json.dumps(packet)}".encode()
-        self.client_socket.sendall(data_to_send)
-        self.receive_data()
+        self.clients[client_id].sendall(data_to_send)
+        while True:
+            self.receive_data(client_id)
 
 
-    def receive_data(self):
+    def receive_data(self, client_id):
         try:
-            packetID = int(self.client_socket.recv(1).decode())
-            print(f"packetID {packetID}")
-            data_length = int(self.client_socket.recv(4).decode())
+            packet_id = int(self.clients[client_id].recv(1).decode())
+            print(f"packet_id {packet_id}")
+            data_length = int(self.clients[client_id].recv(4).decode())
             print(f"data_length {data_length}")
-            self.packet_handlers[packetID](data_length)
+            self.packet_handlers[packet_id](data_length, client_id)
 
         except Exception as e:
             print(f"Error receiving data: {e}")
 
-    def receive_file(self, data_length):
+    def receive_file(self, data_length, client_id):
         """
         Receive a file from a connected client.
         This method expects the client to send the file name, file size, and file data.
         :return: None
         """
         try:
-            data = self.client_socket.recv(int(data_length)).decode()
+            data = self.clients[client_id].recv(int(data_length)).decode()
             data = Protocol.Protocol.decrypt_incoming_data(data)
             file_info = json.loads(data)
             file_name = file_info["file_name"]
@@ -79,7 +94,7 @@ class Server:
 
             file_bytes = b""
             while len(file_bytes) != file_size:
-                part_of_file = self.client_socket.recv(file_size - len(file_bytes))
+                part_of_file = self.clients[client_id].recv(file_size - len(file_bytes))
                 if not len(part_of_file):
                     print("Connection lost")
                     return [0, 0, 0]
@@ -100,13 +115,13 @@ class Server:
             self.database.new_file_in_channel(reference_message_info[0], reference_message_info[1], channel_id)
 
     # region Handlers
-    def handle_file_and_send_to_discord(self, data_length):
-        file_data = self.receive_file(data_length)  # fil name | file content | channelID
+    def handle_file_and_send_to_discord(self, data_length, client_id):
+        file_data = self.receive_file(data_length, client_id)  # fil name | file content | channelID
         if file_data[1]:
             self.send_files_to_discord(file_data[0], file_data[1], file_data[2])
 
-    def handle_sign_up_request(self, data_length):
-        data = self.client_socket.recv(int(data_length)).decode()
+    def handle_sign_up_request(self, data_length, client_id):
+        data = self.clients[client_id].recv(int(data_length)).decode()
         data = Protocol.Protocol.decrypt_incoming_data(data)
         data = json.loads(data)
 
@@ -117,7 +132,7 @@ class Server:
             #  hahaha i am 19 chars long
             data = "noooooooooooooooooo"
             data = f"{data}"
-            self.client_socket.send(data.encode())
+            self.clients[client_id].send(data.encode())
             pass
         else:
             print("username available")
@@ -127,12 +142,12 @@ class Server:
             self.database.create_new_account(data["username"], data["password"], channel_id)
             print(channel_id)
             data = f"{channel_id}"
-            self.client_socket.send(data.encode())
+            self.clients[client_id].send(data.encode())
 
 
 
-    def handle_file_request(self, data_length):
-        requested_file_info = self.client_socket.recv(int(data_length)).decode()
+    def handle_file_request(self, data_length, client_id):
+        requested_file_info = self.clients[client_id].recv(int(data_length)).decode()
         requested_file_info = Protocol.Protocol.decrypt_incoming_data(requested_file_info)
         requested_file_info = json.loads(requested_file_info)  # file_name , channel_id
 
@@ -152,13 +167,13 @@ class Server:
             }
 
             data = f"{2}{self.zero_fill_length(str(packet))}{json.dumps(packet)}".encode()
-            self.client_socket.sendall(data)
-            self.client_socket.sendall(file_bytes)
+            self.clients[client_id].sendall(data)
+            self.clients[client_id].sendall(file_bytes)
         else:
             print("message id is 0")
 
-    def handle_deletion_request(self, data_length):
-        data = self.client_socket.recv(data_length).decode()
+    def handle_deletion_request(self, data_length,client_id):
+        data = self.clients[client_id].recv(data_length).decode()
         data = Protocol.Protocol.decrypt_incoming_data(data)
         data = json.loads(data)
 
@@ -172,8 +187,8 @@ class Server:
             self.database.delete_file_in_table(data["file_name"], data["channel_id"])
         # TODO: make threaded
 
-    def handle_login_request(self, data_length):
-        encrypted_packet = self.client_socket.recv(data_length)
+    def handle_login_request(self, data_length, client_id):
+        encrypted_packet = self.clients[client_id].recv(data_length)
         data = Protocol.Protocol.decrypt_incoming_data(encrypted_packet )
         data = json.loads(data.decode())
 
@@ -183,10 +198,10 @@ class Server:
         }
         print(row)
         data_to_send = f"{1}{self.zero_fill_length(str(packet))}{json.dumps(packet)}".encode()
-        self.client_socket.sendall(data_to_send)
+        self.clients[client_id].sendall(data_to_send)
 
-    def handle_files_for_initiation(self, data_length):
-        encrypted_packet = self.client_socket.recv(data_length)
+    def handle_files_for_initiation(self, data_length, client_id):
+        encrypted_packet = self.clients[client_id].recv(data_length)
         data = Protocol.Protocol.decrypt_incoming_data(encrypted_packet )
         data = json.loads(data.decode())
         files = self.database.get_files_from_id(data["channel_id"])
@@ -196,7 +211,7 @@ class Server:
         }
         print(f"Files: {files}")
         data_to_send = f"{3}{self.zero_fill_length(str(packet))}{json.dumps(packet)}".encode()
-        self.client_socket.send(data_to_send)
+        self.clients[client_id].send(data_to_send)
 
 
     # endregion Handlers
@@ -211,5 +226,3 @@ class Server:
 if __name__ == "__main__":
     server = Server('LocalHost', 12345, "")
     server.start()
-    while True:
-        server.receive_data()
