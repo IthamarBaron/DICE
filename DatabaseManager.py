@@ -4,6 +4,7 @@ import sqlite3
 class Database:
 
     def __init__(self, db_name):
+        self.db_name = db_name
         self.conn = sqlite3.connect(db_name)
         self.cursor = self.conn.cursor()
 
@@ -14,7 +15,7 @@ class Database:
             self.conn.commit()
             return row
         except Exception as e:
-            print(f"Error during login: {e}")
+            print(f"Error during login: {e} [db_name: {self.db_name}]")
 
     def is_username_availability(self,username):
         self.cursor.execute(f"SELECT * FROM users WHERE username='{username}'")

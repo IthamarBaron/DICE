@@ -5,11 +5,6 @@ from tkinter import filedialog
 from tkinter import PhotoImage
 from Client import Client
 from tkinter import font
-from pathlib import Path
-import tkinter as tk
-from tkinter import PhotoImage
-import time
-
 
 BACKGROUND_COLOR = "#5f8ac2"
 
@@ -21,8 +16,6 @@ class ManagerUI:
         self.client_instance = None  # type: Client
         self.connect_frame()
         self.display_files = []
-        self.ASSETS_PATH_NEW = Path(__file__).parent / "assets/frame1"
-
 
     # region FRAMES
 
@@ -81,7 +74,7 @@ class ManagerUI:
         self.current_frame = tk.Frame(self.root, bg=BACKGROUND_COLOR)
         self.current_frame.pack(expand=True, fill=tk.BOTH)
         self.root.geometry("500x400")
-        print(f"[DEBUG] SERVER KEY IN CLIENT: {self.client_instance.server_publc_key}")
+
         # Title
         title_label = tk.Label(self.current_frame, text="LOG IN/SIGN UP", font=("Rubik", 25, "bold"),
                                bg=BACKGROUND_COLOR, fg="white")
@@ -176,7 +169,7 @@ class ManagerUI:
         if not is_successful:
             self.error_label_0.config(text="Connection failed, Try again")
             return
-
+        self.client_instance.receive_data()
         # If connection is successful, switch to the file upload frame
         self.current_frame.destroy()
         self.login_signup_frame()
@@ -263,66 +256,28 @@ class ManagerUI:
         for file in files:
             self.client_instance.users_files[file[0]] = file[1]
 
-    # Your existing code ...
-
-    ASSETS_PATH_NEW = Path(__file__).parent / "assets/frame1"
-
-    def relative_to_assets_new(self, path: str) -> Path:
-        return self.ASSETS_PATH_NEW / Path(path)
-
-    def button_delete_clicked(self, event):
-        self.canvas.scale(self.button_delete, 0, 0, 1.015, 1.015)
-        self.window.update()
-        time.sleep(0.1)
-        self.canvas.scale(self.button_delete, 0, 0, 1 / 1.015, 1 / 1.015)
-        self.window.update()
-        print("Delete button clicked")
-
-    def button_upload_clicked(self, event):
-        self.canvas.scale(self.button_upload, 0, 0, 1.015, 1.015)
-        self.window.update()
-        time.sleep(0.1)
-        self.canvas.scale(self.button_upload, 0, 0, 1 / 1.015, 1 / 1.015)
-        self.window.update()
-        print("Upload button clicked")
-
-    # Instantiate file labels with the new design
-    def relative_to_assets_new(self, path: str) -> Path:
-        return self.ASSETS_PATH_NEW / Path(path)
-
     def instantiate_file_labels(self):
         for file_name in self.client_instance.users_files.keys():
             # Frame to group components for each file
             file_frame = tk.Frame(self.root)
             file_frame.pack()
 
-            # File Image Icon
-            image_path = self.relative_to_assets_new("image_1.png")
-            file_image = PhotoImage(file=image_path)
-            file_image_label = tk.Label(file_frame, image=file_image)
-            file_image_label.image = file_image
-            file_image_label.pack(side=tk.LEFT, padx=10)
-
             # File Name Label
-            file_label = tk.Label(file_frame, text=file_name, font=("Arial", 12), fg="#626262")  # Adjust font and text size here
+            file_label = tk.Label(file_frame, text=file_name)
             file_label.pack(side=tk.LEFT, padx=5)
 
-            # New Delete Button
-            button_image_delete = PhotoImage(file=self.relative_to_assets_new("button_1.png"))
-            button_delete = tk.Button(file_frame, image=button_image_delete, command=lambda name=file_name: self.delete_file(name))
-            button_delete.image = button_image_delete
-            button_delete.pack(side=tk.LEFT)
+            # Download Button
+            download_button = tk.Button(file_frame, text="Download", fg="green",
+                                        command=lambda name=file_name: self.download_file(name))
+            download_button.pack(side=tk.LEFT, padx=5)
 
-            # New Upload Button
-            button_image_upload = PhotoImage(file=self.relative_to_assets_new("button_2.png"))
-            button_upload = tk.Button(file_frame, image=button_image_upload, command=lambda name=file_name: self.download_file(name))
-            button_upload.image = button_image_upload
-            button_upload.pack(side=tk.LEFT)
+            # Delete Button
+            delete_button = tk.Button(file_frame, text="Delete", fg="red",
+                                      command=lambda name=file_name: self.delete_file(name))
+            delete_button.pack(side=tk.LEFT, padx=5)
 
-            self.display_files.extend([file_frame, file_image_label, file_label, button_delete, button_upload])
+            self.display_files.extend([file_frame, file_label, download_button, delete_button])
 
-
-    # Your existing code ...
     def clear_file_labels(self):
         for button in self.display_files:
             button.destroy()
