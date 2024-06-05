@@ -41,7 +41,7 @@ class Server:
         server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         server_socket.bind((self.host, self.port))
         connected_clients = 0
-        while len(self.clients) <= 2:
+        while True:
 
             server_socket.listen()
             print(f"Server is listening for connections")
@@ -62,8 +62,9 @@ class Server:
         }
         data_to_send = f"{0}{self.zero_fill_length(str(packet))}{json.dumps(packet)}".encode()
         self.clients[client_id][0].sendall(data_to_send)
-        while True:
-            self.receive_data(client_id)
+        is_connected = True
+        while is_connected:
+            is_connected = self.receive_data(client_id)
 
 
     def receive_data(self, client_id):
@@ -74,8 +75,12 @@ class Server:
             print(f"data_length {data_length}")
             self.packet_handlers[packet_id](data_length, client_id)
 
+        except ValueError:
+            return True # client disconnected
         except Exception as e:
             print(f"Error receiving data: {e}")
+        finally:
+            return True
 
     def receive_file(self, data_length, client_id):
         """
