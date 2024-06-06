@@ -3,11 +3,13 @@ import json
 import time
 import socket
 
-from Protocol import Protocol
+import Protocol
 
 
 class Client:
     def __init__(self, host, port):
+        self.symmetric_key = None
+        self.asymmetric_protocol_instance = Protocol.AsymmetricEncryptionProtocol()
         self.host = host
         self.port = port
         self.temp_start_time = None
@@ -32,7 +34,7 @@ class Client:
             self.client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             self.client_socket.connect((self.host, self.port))
             print(f"Connected to the server at {self.host}:{self.port}")
-            Protocol.load_key()
+            Protocol.Protocol.load_key()
             return True
         except Exception as e:
             print(f"Connection error: {str(e)}")
@@ -103,7 +105,7 @@ class Client:
         }
 
         print(f"FILEDATA {packet}")
-        file_info = Protocol.prepare_file_info_to_send(packet, packet_id=2)
+        file_info = Protocol.Protocol.prepare_file_info_to_send(packet, packet_id=2)
         #data_to_send = f"{2}{Client.zero_fill_length(str(packet))}{json.dumps(packet)}".encode()
         self.client_socket.send(file_info)
         self.client_socket.sendall(file_data)
@@ -115,7 +117,7 @@ class Client:
             "username": username,
             "password": password
         }
-        data_to_send = Protocol.prepare_data_to_send(1, packet)
+        data_to_send = Protocol.Protocol.prepare_data_to_send(1, packet)
         #data_to_send = f"{1}{Client.zero_fill_length(str(packet))}{json.dumps(packet)}".encode()
         self.client_socket.send(data_to_send)
 
@@ -133,7 +135,7 @@ class Client:
         }
         print("method called")
 
-        data_to_send = Protocol.prepare_data_to_send(4, packet)
+        data_to_send = Protocol.Protocol.prepare_data_to_send(4, packet)
         #data_to_send = f"{4}{Client.zero_fill_length(str(packet))}{json.dumps(packet)}".encode()
         self.client_socket.send(data_to_send)
         self.reload_files_flag = True
@@ -146,7 +148,7 @@ class Client:
             "file_name": file_name,
             "channel_id": channel_id
         }
-        data_to_send = Protocol.prepare_data_to_send(3,packet)
+        data_to_send = Protocol.Protocol.prepare_data_to_send(3,packet)
         #data_to_send = f"{3}{Client.zero_fill_length(str(packet))}{json.dumps(packet)}".encode()
         self.client_socket.send(data_to_send)
         self.receive_data()
@@ -159,10 +161,10 @@ class Client:
             "password": password,
         }
 
-        data_to_send = Protocol.prepare_data_to_send(5, packet)
+        data_to_send = Protocol.Protocol.prepare_data_to_send(5, packet)
         #data_to_send = f"{5}{Client.zero_fill_length(str(packet))}{json.dumps(packet)}".encode()
         self.client_socket.send(data_to_send)
-        self.receive_data() # TODO: add another handler for the login details recivement
+        self.receive_data()
 
     def request_user_files(self):
 
@@ -170,7 +172,7 @@ class Client:
             "channel_id": self.user_data[2]
         }
 
-        data_to_send = Protocol.prepare_data_to_send(6,packet)
+        data_to_send = Protocol.Protocol.prepare_data_to_send(6,packet)
         #data_to_send = f"{6}{self.zero_fill_length(str(packet))}{json.dumps(packet)}".encode()
         self.client_socket.send(data_to_send)
         self.receive_data()
@@ -188,11 +190,28 @@ class Client:
         print(data["row"])
         self.user_data = data["row"]
 
-    def handle_server_key(self,data_length):
+    def handle_server_key(self, data_length):
         data = self.client_socket.recv(data_length).decode()
         data = json.loads(data)
         self.server_publc_key = data["server_public_key"]
         print(f"Server public key in client {self.server_publc_key}")
+        # Generate a symmetric key:
+        if not self.symmetric_key:
+            self.symmetric_key = Protocol.get_random_bytes(16)
+        print(f"type of shit {type(self.server_publc_key)}")
+        encrypted_symmetric_key = self.asymmetric_protocol_instance.encrypt_symmetric_key(self.symmetric_key, self.server_publc_key)
+        print("ok4")
+
+        print(f"ENCRYPTED SYMMETRIC KEY READY TO SEND: [{encrypted_symmetric_key}]")\
+        #TODO: SEND THE SYMMETRIC KEY
+
+        packet = {
+            "encrypted_symmetric_key": encrypted_symmetric_key,
+        }
+        data_to_send = Protocol.Protocol.prepare_data_to_send(0, packet)
+        self.client_socket.sendall(data_to_send)
+        self.receive_data()
+
 
     @staticmethod
     def zero_fill_length(input_string, width=4):

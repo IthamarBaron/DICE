@@ -12,12 +12,13 @@ import threading
 class Server:
 
     def __init__(self, host, port, token):
-        self.server_protocol_instance = None
+        self.asymmetric_protocol_instance = Protocol.AsymmetricEncryptionProtocol()
         self.host = host
         self.port = port
         self.clients = {}
+        self.clients_symmetric_keys = []
         self.client_threads = []
-        self.packet_handlers = [None, self.handle_sign_up_request, self.handle_file_and_send_to_discord,
+        self.packet_handlers = [self.handle_symmetric_key, self.handle_sign_up_request, self.handle_file_and_send_to_discord,
                                 self.handle_file_request, self.handle_deletion_request, self.handle_login_request,
                                 self.handle_files_for_initiation]
         #self.database = Database("Dice-Database.db")
@@ -35,9 +36,8 @@ class Server:
 
 
         Protocol.Protocol.generate_key() #TODO: SWAP LATER
-        self.server_protocol_instance = Protocol.ServerProtocol()
-        self.server_protocol_instance.create_server_keys()
-        print(f" [MAIN THREAD] Server public key in server {self.server_protocol_instance.get_public_key()}")
+        self.asymmetric_protocol_instance.create_server_keys()
+        print(f" [MAIN THREAD] Server public key in server {self.asymmetric_protocol_instance.get_public_key()}")
         server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         server_socket.bind((self.host, self.port))
         connected_clients = 0
@@ -58,7 +58,7 @@ class Server:
     def run_server_for_client(self, client_id):
         self.clients[client_id].append(Database("Dice-Database.db"))
         packet = {
-            "server_public_key": str(self.server_protocol_instance.get_public_key()),
+            "server_public_key": self.asymmetric_protocol_instance.get_public_key(),
         }
         data_to_send = f"{0}{self.zero_fill_length(str(packet))}{json.dumps(packet)}".encode()
         self.clients[client_id][0].sendall(data_to_send)
@@ -219,6 +219,14 @@ class Server:
         data_to_send = f"{3}{self.zero_fill_length(str(packet))}{json.dumps(packet)}".encode()
         self.clients[client_id][0].send(data_to_send)
 
+    def handle_symmetric_key(self, data_length, client_id):
+        encrypted_packet = self.clients[client_id][0].recv(data_length)
+        data = Protocol.Protocol.decrypt_incoming_data(encrypted_packet)
+        data = json.loads(data.decode())
+        encrypted_symmetric_key = data["encrypted_symmetric_key"]
+        print("TYPEEEEEEEEEEEEEEEEEEEEEEEEEEEEEE")
+        print(type(encrypted_symmetric_key))
+        #client_symmetric_key = self.asymmetric_protocol_instance.decrypt_data()
 
     # endregion Handlers
 

@@ -1,15 +1,31 @@
 import json
+
+import Crypto.Random
 from cryptography.fernet import Fernet
 import json
 from cryptography.fernet import Fernet
 from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives import serialization, hashes
 from cryptography.hazmat.primitives.asymmetric import rsa, padding
+from Crypto.Cipher import AES
+from Crypto.Util.Padding import pad, unpad
+from Crypto.Random import get_random_bytes
+
 
 class Protocol:
 
     key = None
     fernet_object = None
+
+
+    @staticmethod
+    def generate_key():
+        Protocol.key = Fernet.generate_key()
+        Protocol.fernet_object = Fernet(key=Protocol.key)
+        Protocol.debug_protocol()
+        # Save the key to a file
+        with open("encryption_key.txt", "wb") as key_file:
+            key_file.write(Protocol.key)
 
     @staticmethod
     def debug_protocol():
@@ -20,15 +36,6 @@ class Protocol:
         print(f"[PROTOCOL KEY = {Protocol.key}]")
         print(f"[PROTOCOL TYPE OF FERNET-OBJ = {type(Protocol.fernet_object)}]")
         print(f"============[PROTOCOL DEBUG]============")
-
-    @staticmethod
-    def generate_key():
-        Protocol.key = Fernet.generate_key()
-        Protocol.fernet_object = Fernet(key=Protocol.key)
-        Protocol.debug_protocol()
-        # Save the key to a file
-        with open("encryption_key.txt", "wb") as key_file:
-            key_file.write(Protocol.key)
 
     @staticmethod
     def load_key():
@@ -97,7 +104,7 @@ class Protocol:
         return decrypted_data
 
 
-class ServerProtocol:
+class AsymmetricEncryptionProtocol:
     def __init__(self):
         """
         Initialize the ServerProtocol object with private and public key attributes set to None.
@@ -168,12 +175,35 @@ class ServerProtocol:
         )
 
 
-class ClientProtocol:
+    def encrypt_symmetric_key(self, symmetric_key, server_public_key):
+        """
+        Encrypt a symmetric key using the server's public key.
+
+        Args:
+            symmetric_key (bytes): The symmetric key to encrypt.
+            server_public_key (object): The server's public key used for encryption.
+
+        Returns:
+            bytes: The encrypted symmetric key.
+        """
+        return server_public_key.encrypt(
+            symmetric_key,
+            padding.OAEP(
+                mgf=padding.MGF1(algorithm=hashes.SHA256()),
+                algorithm=hashes.SHA256(),
+                label=None
+            )
+        )
+
+
+class ClientKeyTransferProtocol:
     def __init__(self):
         """
         Initialize the ClientProtocol object with the symmetric key attribute set to None.
         """
-        self.symmetric_key = None
+        self.symmetric_key = Fernet.generate_key()
+        self.fernet_object = Fernet(key=Protocol.key)
+
 
     def generate_symmetric_key(self):
         """
@@ -251,3 +281,66 @@ class ClientProtocol:
             )
         )
 
+class SymmetricEncryptionProtocol:
+    # use get_random_bytes(16) for key
+    @staticmethod
+    def encrypt_data(key, data):
+        # Generate a random IV (Initialization Vector)
+        iv = get_random_bytes(16)
+
+        # Create AES cipher
+        cipher = AES.new(key, AES.MODE_CBC, iv)
+
+        # Pad the data to be multiple of block size
+        padded_data = pad(data, AES.block_size)
+
+        # Encrypt the data
+        encrypted_data = cipher.encrypt(padded_data)
+
+        # Return the IV and encrypted data
+        return iv + encrypted_data
+
+
+    @staticmethod
+    def decrypt_data(key, encrypted_data):
+        # Extract the IV from the beginning of the encrypted data
+        iv = encrypted_data[:16]
+
+        # Extract the actual encrypted data
+        actual_encrypted_data = encrypted_data[16:]
+
+        # Create AES cipher
+        cipher = AES.new(key, AES.MODE_CBC, iv)
+
+        # Decrypt the data
+        decrypted_data = cipher.decrypt(actual_encrypted_data)
+
+        # Unpad the data
+        original_data = unpad(decrypted_data, AES.block_size)
+
+        # Return the original data
+        return original_data
+
+
+
+asymmetric = AsymmetricEncryptionProtocol()
+symmetric = SymmetricEncryptionProtocol()
+
+asymmetric.create_server_keys()
+public_key = asymmetric.public_key
+print(type(public_key))
+data = "test"
+data_bytes = data.encode('utf-8')
+print(data_bytes)
+
+encrypted_data_key = asymmetric.encrypt_symmetric_key(data_bytes, public_key)
+encrypted_data_data = asymmetric.encrypt_data(data_bytes)
+
+print(f"encrypted data key {encrypted_data_key}")
+print(f"encrypted data data {encrypted_data_data}")
+
+decrypted_data_key = asymmetric.decrypt_data(encrypted_data_key)
+decrypted_data_data = asymmetric.decrypt_data(encrypted_data_data)
+
+print(f"decrypted data key {decrypted_data_key.decode('utf-8')}")
+print(f"decrypted data data {decrypted_data_data.decode('utf-8')}")
