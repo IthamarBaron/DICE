@@ -1,3 +1,4 @@
+import base64
 import os
 import json
 import time
@@ -56,6 +57,7 @@ class Client:
             self.client_socket.recv(1240)
         except Exception as e:
             print(f"Error receiving data: {e}")
+            raise e
 
     def get_file_from_server(self, data_length):
         try:
@@ -193,24 +195,22 @@ class Client:
     def handle_server_key(self, data_length):
         data = self.client_socket.recv(data_length).decode()
         data = json.loads(data)
-        self.server_publc_key = data["server_public_key"]
+        self.server_publc_key = self.asymmetric_protocol_instance.load_public_key_from_str(data["server_public_key"])
         print(f"Server public key in client {self.server_publc_key}")
         # Generate a symmetric key:
         if not self.symmetric_key:
             self.symmetric_key = Protocol.get_random_bytes(16)
         print(f"type of shit {type(self.server_publc_key)}")
         encrypted_symmetric_key = self.asymmetric_protocol_instance.encrypt_symmetric_key(self.symmetric_key, self.server_publc_key)
-        print("ok4")
+        encrypted_symmetric_key_base64 = base64.b64encode(encrypted_symmetric_key).decode('utf-8')
 
-        print(f"ENCRYPTED SYMMETRIC KEY READY TO SEND: [{encrypted_symmetric_key}]")\
         #TODO: SEND THE SYMMETRIC KEY
 
         packet = {
-            "encrypted_symmetric_key": encrypted_symmetric_key,
+            "encrypted_symmetric_key_base64": encrypted_symmetric_key_base64,
         }
         data_to_send = Protocol.Protocol.prepare_data_to_send(0, packet)
         self.client_socket.sendall(data_to_send)
-        self.receive_data()
 
 
     @staticmethod

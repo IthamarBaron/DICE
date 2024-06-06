@@ -112,6 +112,23 @@ class AsymmetricEncryptionProtocol:
         self.private_key = None
         self.public_key = None
 
+    @staticmethod
+    def get_public_key_as_str(public_key):
+        # Serialize the public key to PEM format
+        pem = public_key.public_bytes(
+            encoding=serialization.Encoding.PEM,
+            format=serialization.PublicFormat.SubjectPublicKeyInfo
+        )
+        return pem.decode('utf-8')
+
+    @staticmethod
+    def load_public_key_from_str(pem_str):
+        # Deserialize the public key from PEM format
+        public_key = serialization.load_pem_public_key(
+            pem_str.encode('utf-8'),
+            backend=default_backend()
+        )
+        return public_key
     def create_server_keys(self):
         """
         Generate RSA private and public keys and store them in the respective attributes.

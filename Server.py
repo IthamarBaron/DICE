@@ -1,5 +1,6 @@
 import asyncio
 import json
+import base64
 
 import Protocol
 from DatabaseManager import Database
@@ -57,8 +58,9 @@ class Server:
 
     def run_server_for_client(self, client_id):
         self.clients[client_id].append(Database("Dice-Database.db"))
+
         packet = {
-            "server_public_key": self.asymmetric_protocol_instance.get_public_key(),
+            "server_public_key": self.asymmetric_protocol_instance.get_public_key_as_str(self.asymmetric_protocol_instance.public_key),
         }
         data_to_send = f"{0}{self.zero_fill_length(str(packet))}{json.dumps(packet)}".encode()
         self.clients[client_id][0].sendall(data_to_send)
@@ -69,6 +71,7 @@ class Server:
 
     def receive_data(self, client_id):
         try:
+            print("RECEIVING DATA")
             packet_id = int(self.clients[client_id][0].recv(1).decode())
             print(f" [CLIENT_THREAD {client_id}] packet_id {packet_id}")
             data_length = int(self.clients[client_id][0].recv(4).decode())
@@ -78,6 +81,7 @@ class Server:
         except ValueError:
             return True # client disconnected
         except Exception as e:
+            raise e
             print(f" [CLIENT_THREAD {client_id}] Error receiving data: {e}")
         finally:
             return True
@@ -223,10 +227,13 @@ class Server:
         encrypted_packet = self.clients[client_id][0].recv(data_length)
         data = Protocol.Protocol.decrypt_incoming_data(encrypted_packet)
         data = json.loads(data.decode())
-        encrypted_symmetric_key = data["encrypted_symmetric_key"]
-        print("TYPEEEEEEEEEEEEEEEEEEEEEEEEEEEEEE")
-        print(type(encrypted_symmetric_key))
-        #client_symmetric_key = self.asymmetric_protocol_instance.decrypt_data()
+        encrypted_symmetric_key_base64 = data["encrypted_symmetric_key_base64"]
+        encrypted_symmetric_key = base64.b64decode(encrypted_symmetric_key_base64)
+        symmetric_key = self.asymmetric_protocol_instance.decrypt_data(encrypted_symmetric_key)
+        print(f"DECRYPTED SYMMETRIC KEY: [{symmetric_key}]")
+        self.clients_symmetric_keys.append(symmetric_key)
+        print(self.clients_symmetric_keys)
+
 
     # endregion Handlers
 
@@ -240,3 +247,4 @@ class Server:
 if __name__ == "__main__":
     server = Server('LocalHost', 12345, "")
     server.start()
+
