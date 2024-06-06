@@ -47,6 +47,11 @@ class Client:
             print(f"data_length {data_length}")
             print(f"calling {str(self.packet_handlers[packet_id])}")
             self.packet_handlers[packet_id](data_length)
+
+        except ValueError as e:
+            # added this part to avoid a small error blocking new attempts
+            print(f"ValueError - {e}. trying to clean the socket")
+            self.client_socket.recv(1240)
         except Exception as e:
             print(f"Error receiving data: {e}")
 

@@ -37,16 +37,16 @@ class Server:
         Protocol.Protocol.generate_key() #TODO: SWAP LATER
         self.server_protocol_instance = Protocol.ServerProtocol()
         self.server_protocol_instance.create_server_keys()
-        print(f"Server public key in server {self.server_protocol_instance.get_public_key()}")
+        print(f" [MAIN THREAD] Server public key in server {self.server_protocol_instance.get_public_key()}")
         server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         server_socket.bind((self.host, self.port))
         connected_clients = 0
         while True:
 
             server_socket.listen()
-            print(f"Server is listening for connections")
+            print(f" [MAIN THREAD] Server is listening for connections")
             client_socket, _ = server_socket.accept()  # ACCEPT CONNECTION
-            print(f"New client connected: {client_socket.getpeername()}")
+            print(f" [MAIN THREAD] client connected: {client_socket.getpeername()}")
             self.clients[connected_clients] = [client_socket]  # Add the client to the dict
 
             new_client_thread = threading.Thread(target=self.run_server_for_client, args=(connected_clients,), daemon=True)
@@ -70,15 +70,15 @@ class Server:
     def receive_data(self, client_id):
         try:
             packet_id = int(self.clients[client_id][0].recv(1).decode())
-            print(f"packet_id {packet_id}")
+            print(f" [CLIENT_THREAD {client_id}] packet_id {packet_id}")
             data_length = int(self.clients[client_id][0].recv(4).decode())
-            print(f"data_length {data_length}")
+            print(f" [CLIENT_THREAD {client_id}] data_length {data_length}")
             self.packet_handlers[packet_id](data_length, client_id)
 
         except ValueError:
             return True # client disconnected
         except Exception as e:
-            print(f"Error receiving data: {e}")
+            print(f" [CLIENT_THREAD {client_id}] Error receiving data: {e}")
         finally:
             return True
 
@@ -112,12 +112,12 @@ class Server:
         return [0, 0, 0]
 
     def send_files_to_discord(self, file_name, file_content, channel_id, client_id):
-        print(f"Sending file [{file_name}] in channel [{self.bot_instance.bot.get_channel(channel_id)}]")
+        print(f" [CLIENT_THREAD {client_id}] Sending file [{file_name}] in channel [{self.bot_instance.bot.get_channel(channel_id)}]")
         temp = asyncio.run_coroutine_threadsafe(
             self.bot_instance.send_file_in_chat(file_name, file_content, channel_id), self.bot_instance.bot.loop)
         reference_message_info = temp.result()
         if reference_message_info:
-            print(f"Message sent successfully")
+            print(f" [CLIENT_THREAD {client_id}] Message sent successfully")
             self.clients[client_id][1].new_file_in_channel(reference_message_info[0], reference_message_info[1], channel_id)
 
     # region Handlers
@@ -134,14 +134,14 @@ class Server:
         print(data)
 
         if not self.clients[client_id][1].is_username_availability(data["username"]):
-            print("Username unavailable")
+            print(f" [CLIENT_THREAD {client_id}] Username unavailable")
             #  hahaha i am 19 chars long
             data = "noooooooooooooooooo"
             data = f"{data}"
             self.clients[client_id][0].send(data.encode())
             pass
         else:
-            print("username available")
+            print(f" [CLIENT_THREAD {client_id}] username available")
             attempt_channel_creation = asyncio.run_coroutine_threadsafe(self.bot_instance.create_new_storage_area(data["username"]),
                                                     self.bot_instance.bot.loop)
             channel_id = attempt_channel_creation.result()
@@ -176,7 +176,7 @@ class Server:
             self.clients[client_id][0].sendall(data)
             self.clients[client_id][0].sendall(file_bytes)
         else:
-            print("message id is 0")
+            print(f" [CLIENT_THREAD {client_id}] message id is 0")
 
     def handle_deletion_request(self, data_length,client_id):
         data = self.clients[client_id][0].recv(data_length).decode()
@@ -189,7 +189,7 @@ class Server:
                                                 int(data["channel_id"])), self.bot_instance.bot.loop)
         is_successful = proc.result()
         if is_successful:
-            print("successful!")
+            print(f" [CLIENT_THREAD {client_id}] successful!")
             self.clients[client_id][1].delete_file_in_table(data["file_name"], data["channel_id"])
         # TODO: make threaded
 
