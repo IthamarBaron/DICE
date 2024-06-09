@@ -17,11 +17,13 @@ class Server:
         self.host = host
         self.port = port
         self.clients = {}
-        self.clients_symmetric_keys = []
+        self.clients_aes = []
         self.client_threads = []
-        self.packet_handlers = [self.handle_symmetric_key, self.handle_sign_up_request, self.handle_file_and_send_to_discord,
-                                self.handle_file_request, self.handle_deletion_request, self.handle_login_request,
+        self.packet_handlers = [self.handle_symmetric_key, self.handle_sign_up_request,
+                                self.handle_file_and_send_to_discord, self.handle_file_request,
+                                self.handle_deletion_request, self.handle_login_request,
                                 self.handle_files_for_initiation]
+
         #self.database = Database("Dice-Database.db")
         self.bot_instance = DiscordBot.DiscordBot(token)
         thread = threading.Thread(target=self.bot_instance.run_discord_bot, daemon=True)
@@ -36,7 +38,6 @@ class Server:
         """
 
 
-        Protocol.Protocol.generate_key() #TODO: SWAP LATER
         self.asymmetric_protocol_instance.create_server_keys()
         print(f" [MAIN THREAD] Server public key in server {self.asymmetric_protocol_instance.get_public_key()}")
         server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -71,17 +72,17 @@ class Server:
 
     def receive_data(self, client_id):
         try:
-            print("RECEIVING DATA")
+            print(f"[CLIENT {client_id}] RECEIVING DATA")
             packet_id = int(self.clients[client_id][0].recv(1).decode())
             print(f" [CLIENT_THREAD {client_id}] packet_id {packet_id}")
             data_length = int(self.clients[client_id][0].recv(4).decode())
             print(f" [CLIENT_THREAD {client_id}] data_length {data_length}")
             self.packet_handlers[packet_id](data_length, client_id)
+            print(f"Calling {self.packet_handlers[packet_id]} with params{(data_length, client_id)}")
 
         except ValueError:
             return True # client disconnected
         except Exception as e:
-            raise e
             print(f" [CLIENT_THREAD {client_id}] Error receiving data: {e}")
         finally:
             return True
@@ -94,7 +95,7 @@ class Server:
         """
         try:
             data = self.clients[client_id][0].recv(int(data_length)).decode()
-            data = Protocol.Protocol.decrypt_incoming_data(data)
+            data = Protocol.SymmetricEncryptionProtocol.decrypt_packet(self.clients_aes[client_id], data)
             file_info = json.loads(data)
             file_name = file_info["file_name"]
             file_size = int(file_info["file_size"])
@@ -109,7 +110,6 @@ class Server:
                     print("Connection lost")
                     return [0, 0, 0]
                 file_bytes += part_of_file
-            #file_bytes = Protocol.Protocol.decrypt_incoming_data(file_bytes)
             return [file_name, file_bytes, channel_id]
         except Exception as e:
             print(f"Error receive file: {e}")
@@ -132,7 +132,7 @@ class Server:
 
     def handle_sign_up_request(self, data_length, client_id):
         data = self.clients[client_id][0].recv(int(data_length)).decode()
-        data = Protocol.Protocol.decrypt_incoming_data(data)
+        data = Protocol.SymmetricEncryptionProtocol.decrypt_packet(self.clients_aes[client_id], data)
         data = json.loads(data)
 
         print(data)
@@ -158,7 +158,7 @@ class Server:
 
     def handle_file_request(self, data_length, client_id):
         requested_file_info = self.clients[client_id][0].recv(int(data_length)).decode()
-        requested_file_info = Protocol.Protocol.decrypt_incoming_data(requested_file_info)
+        data = Protocol.SymmetricEncryptionProtocol.decrypt_packet(self.clients_aes[client_id], requested_file_info)
         requested_file_info = json.loads(requested_file_info)  # file_name , channel_id
 
         message_id = self.clients[client_id][1].get_message_id_by_name(requested_file_info["file_name"],
@@ -184,7 +184,7 @@ class Server:
 
     def handle_deletion_request(self, data_length,client_id):
         data = self.clients[client_id][0].recv(data_length).decode()
-        data = Protocol.Protocol.decrypt_incoming_data(data)
+        data = Protocol.SymmetricEncryptionProtocol.decrypt_packet(self.clients_aes[client_id], data)
         data = json.loads(data)
 
         message_id = self.clients[client_id][1].get_message_id_by_name(data["file_name"], int(data["channel_id"]))
@@ -198,10 +198,13 @@ class Server:
         # TODO: make threaded
 
     def handle_login_request(self, data_length, client_id):
-        encrypted_packet = self.clients[client_id][0].recv(data_length)
-        data = Protocol.Protocol.decrypt_incoming_data(encrypted_packet )
-        data = json.loads(data.decode())
-
+        encrypted_packet = self.recvall(client_id, data_length)
+        #encrypted_packet = self.clients[client_id][0].recv(data_length)
+        print(f"[TEMP1] encrypted_packet type{type(encrypted_packet)} | content {encrypted_packet}")
+        data = self.clients_aes[client_id].decrypt(encrypted_packet)
+        print(f"[TEMP2] data type{type(data)} | content {data}")
+        data = json.loads(data)
+        print(f"[TEMP3] data type{type(data)} | content {data}")
         row = self.clients[client_id][1].attempt_login(data["username"], data["password"])
         packet = {
             "row": row
@@ -212,7 +215,7 @@ class Server:
 
     def handle_files_for_initiation(self, data_length, client_id):
         encrypted_packet = self.clients[client_id][0].recv(data_length)
-        data = Protocol.Protocol.decrypt_incoming_data(encrypted_packet )
+        data = Protocol.SymmetricEncryptionProtocol.decrypt_packet(self.clients_aes[client_id], encrypted_packet)
         data = json.loads(data.decode())
         files = self.clients[client_id][1].get_files_from_id(data["channel_id"])
 
@@ -224,18 +227,26 @@ class Server:
         self.clients[client_id][0].send(data_to_send)
 
     def handle_symmetric_key(self, data_length, client_id):
-        encrypted_packet = self.clients[client_id][0].recv(data_length)
-        data = Protocol.Protocol.decrypt_incoming_data(encrypted_packet)
+        data = self.clients[client_id][0].recv(data_length)
         data = json.loads(data.decode())
         encrypted_symmetric_key_base64 = data["encrypted_symmetric_key_base64"]
         encrypted_symmetric_key = base64.b64decode(encrypted_symmetric_key_base64)
         symmetric_key = self.asymmetric_protocol_instance.decrypt_data(encrypted_symmetric_key)
-        print(f"DECRYPTED SYMMETRIC KEY: [{symmetric_key}]")
-        self.clients_symmetric_keys.append(symmetric_key)
-        print(self.clients_symmetric_keys)
+        print(f"DECRYPTED SYMMETRIC KEY: {symmetric_key}")
+        self.clients_aes.append(Protocol.AESCipher(symmetric_key))
 
 
     # endregion Handlers
+
+
+    def recvall(self,client_id, buffsize: int) -> bytes:
+        data = b""
+        while len(data) < buffsize:
+            res = self.clients[client_id][0].recv(buffsize - len(data))
+            data += res
+            if res == b"":  # connection closed
+                raise ValueError
+        return data
 
     @staticmethod
     def zero_fill_length(input_string, width=4):

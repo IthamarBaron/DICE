@@ -1,8 +1,5 @@
-import io
-import re
-import time
+
 import discord
-import requests
 from FileManager import FileManager
 from discord import Activity, ActivityType
 
@@ -61,6 +58,14 @@ class DiscordBot:
         await self.bot.change_presence(activity=activity)
 
     async def send_file_in_chat(self, file_name, file_content, channel_id=1182998507460771890):
+        """
+            Send a file in chunks to a specified Discord channel.
+
+            :param file_name: The name of the file being sent.
+            :param file_content: The content of the file being sent.
+            :param channel_id: The ID of the Discord channel to send the file to. Default is 1182998507460771890.
+            :return: A list containing the file name and message ID if successful, otherwise None.
+            """
         try:
             file_name = await self.get_available_file_name(file_name, channel_id)
             channel = self.bot.get_channel(channel_id)
@@ -136,8 +141,8 @@ class DiscordBot:
 
 
 
-        # message command
-        if user_message.lower().startswith("send"):  # send <filename> # TODO: properly make filename and name
+        # message commands - mainly used for manual debuging through discord
+        if user_message.lower().startswith("send"):
             name = (user_message[5::])
             file_name = name
             file = open(file_name, "rb")

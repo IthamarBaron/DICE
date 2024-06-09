@@ -3,12 +3,12 @@ import os
 import json
 import time
 import socket
-
 import Protocol
 
 
 class Client:
     def __init__(self, host, port):
+        self.aes = None
         self.symmetric_key = None
         self.asymmetric_protocol_instance = Protocol.AsymmetricEncryptionProtocol()
         self.host = host
@@ -35,7 +35,6 @@ class Client:
             self.client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             self.client_socket.connect((self.host, self.port))
             print(f"Connected to the server at {self.host}:{self.port}")
-            Protocol.Protocol.load_key()
             return True
         except Exception as e:
             print(f"Connection error: {str(e)}")
@@ -107,9 +106,11 @@ class Client:
         }
 
         print(f"FILEDATA {packet}")
-        file_info = Protocol.Protocol.prepare_file_info_to_send(packet, packet_id=2)
-        #data_to_send = f"{2}{Client.zero_fill_length(str(packet))}{json.dumps(packet)}".encode()
-        self.client_socket.send(file_info)
+        # file_info = Protocol.Protocol.prepare_file_info_to_send(packet, packet_id=2)
+        data_to_send = f"{2}{Client.zero_fill_length(str(packet))}{Protocol.SymmetricEncryptionProtocol.encrypt_packet(self.symmetric_key, json.dumps(packet))}".encode()
+        print(f"Sending packet {data_to_send}")
+
+        self.client_socket.send(data_to_send)
         self.client_socket.sendall(file_data)
         self.reload_files_flag = True
 
@@ -119,8 +120,10 @@ class Client:
             "username": username,
             "password": password
         }
-        data_to_send = Protocol.Protocol.prepare_data_to_send(1, packet)
-        #data_to_send = f"{1}{Client.zero_fill_length(str(packet))}{json.dumps(packet)}".encode()
+        #data_to_send = Protocol.Protocol.prepare_data_to_send(1, packet)
+        data_to_send = f"{1}{Client.zero_fill_length(str(packet))}{Protocol.SymmetricEncryptionProtocol.encrypt_packet(self.symmetric_key, json.dumps(packet))}".encode()
+        print(f"Sending packet {data_to_send}")
+
         self.client_socket.send(data_to_send)
 
         response = self.client_socket.recv(19)
@@ -137,21 +140,35 @@ class Client:
         }
         print("method called")
 
-        data_to_send = Protocol.Protocol.prepare_data_to_send(4, packet)
-        #data_to_send = f"{4}{Client.zero_fill_length(str(packet))}{json.dumps(packet)}".encode()
+        #data_to_send = Protocol.Protocol.prepare_data_to_send(4, packet)
+        data_to_send = f"{4}{Client.zero_fill_length(str(packet))}{Protocol.SymmetricEncryptionProtocol.encrypt_packet(self.symmetric_key, json.dumps(packet))}".encode()
+        print(f"Sending packet {data_to_send}")
+
         self.client_socket.send(data_to_send)
         self.reload_files_flag = True
         print("Sent file request")
 
     def request_download_file(self, file_name, channel_id):
+        """
+        Request to download a file from the server.
+
+        :param file_name: The name of the file to download.
+        :param channel_id: The ID of the channel where the file is located.
+        :return: None
+        """
+
         self.temp_start_time = time.time()
 
         packet = {
             "file_name": file_name,
             "channel_id": channel_id
         }
-        data_to_send = Protocol.Protocol.prepare_data_to_send(3,packet)
-        #data_to_send = f"{3}{Client.zero_fill_length(str(packet))}{json.dumps(packet)}".encode()
+
+        encrypted_packet = Protocol.SymmetricEncryptionProtocol.encrypt_packet(self.symmetric_key, json.dumps(packet))
+        data_to_send = f"{3}{Client.zero_fill_length(str(encrypted_packet))}".encode()
+        data_to_send = data_to_send + encrypted_packet
+
+        print(f"Sending packet {data_to_send}")
         self.client_socket.send(data_to_send)
         self.receive_data()
         self.reload_files_flag = True
@@ -163,8 +180,10 @@ class Client:
             "password": password,
         }
 
-        data_to_send = Protocol.Protocol.prepare_data_to_send(5, packet)
-        #data_to_send = f"{5}{Client.zero_fill_length(str(packet))}{json.dumps(packet)}".encode()
+        #data_to_send = Protocol.Protocol.prepare_data_to_send(5, packet)
+        data_to_send = f"{5}{Client.zero_fill_length(self.aes.encrypt(json.dumps(packet)))}".encode() + self.aes.encrypt(json.dumps(packet))
+        print(f"Sending packet {data_to_send}")
+
         self.client_socket.send(data_to_send)
         self.receive_data()
 
@@ -174,8 +193,10 @@ class Client:
             "channel_id": self.user_data[2]
         }
 
-        data_to_send = Protocol.Protocol.prepare_data_to_send(6,packet)
-        #data_to_send = f"{6}{self.zero_fill_length(str(packet))}{json.dumps(packet)}".encode()
+        #data_to_send = Protocol.Protocol.prepare_data_to_send(6,packet)
+        data_to_send = f"{6}{self.zero_fill_length(str(packet))}{Protocol.SymmetricEncryptionProtocol.encrypt_packet(self.symmetric_key, json.dumps(packet))}".encode()
+        print(f"Sending packet {data_to_send}")
+
         self.client_socket.send(data_to_send)
         self.receive_data()
 
@@ -200,7 +221,8 @@ class Client:
         # Generate a symmetric key:
         if not self.symmetric_key:
             self.symmetric_key = Protocol.get_random_bytes(16)
-        print(f"type of shit {type(self.server_publc_key)}")
+            self.aes = Protocol.AESCipher(self.symmetric_key)
+        print(f"symmetric key [client] {self.symmetric_key}")
         encrypted_symmetric_key = self.asymmetric_protocol_instance.encrypt_symmetric_key(self.symmetric_key, self.server_publc_key)
         encrypted_symmetric_key_base64 = base64.b64encode(encrypted_symmetric_key).decode('utf-8')
 
@@ -209,7 +231,9 @@ class Client:
         packet = {
             "encrypted_symmetric_key_base64": encrypted_symmetric_key_base64,
         }
-        data_to_send = Protocol.Protocol.prepare_data_to_send(0, packet)
+        data_to_send = f"{0}{self.zero_fill_length(str(packet))}{json.dumps(packet)}".encode()
+        print(f"Sending packet {data_to_send}")
+
         self.client_socket.sendall(data_to_send)
 
 
