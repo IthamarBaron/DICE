@@ -62,8 +62,9 @@ class Client:
 
     def get_file_from_server(self, data_length):
         try:
-            file_info = self.client_socket.recv(int(data_length)).decode()
-            file_info = json.loads(file_info)
+            encrypted_packet = self.client_socket.recv(data_length)
+            data = self.symmetric_protocol_instance.decrypt_packet(self.symmetric_key, encrypted_packet)
+            file_info = json.loads(data)
 
             file_name = file_info["file_name"]
             file_size = int(file_info["len_file_bytes"])
@@ -71,20 +72,21 @@ class Client:
 
             received_bytes_count = 0
             file = open(f"received_{file_name}", 'wb')
-            while received_bytes_count != file_size:
-                part_of_file = self.client_socket.recv(file_size - received_bytes_count)
-                if not len(part_of_file):
+            while received_bytes_count < file_size:
+                part_of_file = self.client_socket.recv(min(file_size - received_bytes_count, 4096))
+                if not part_of_file:
                     print("Connection lost")
-                    # TODO: do something about this (make faster)
+                    break
                 file.write(part_of_file)
                 received_bytes_count += len(part_of_file)
+
             file.close()
             self.temp_end_time = time.time()
             delta_time = int(self.temp_end_time - self.temp_start_time)
-            print(f"time time elapsed: {delta_time}")
-            print(f"Download average speed: {(file_size / (1024 ** 2)) / delta_time}")
+            print(f"Time elapsed: {delta_time} seconds")
+            print(f"Download average speed: {(file_size / (1024 ** 2)) / delta_time} MB/s")
         except Exception as e:
-            print(f"Error receive file: {e}")
+            print(f"Error receiving file: {e}")
 
     def send_file_to_server(self, file_path: str, channel_id: int) -> None:
         """
@@ -204,15 +206,17 @@ class Client:
         self.receive_data()
 
     def handle_files_for_initiation(self, data_length):
-        data = self.client_socket.recv(data_length).decode()
-        data = json.loads(data)
+        encrypted_packet = self.client_socket.recv(data_length)
+        data = self.symmetric_protocol_instance.decrypt_data(self.symmetric_key, encrypted_packet)
+        data = json.loads(data.decode())
         self.users_files = data["files"]
         self.reload_files_flag = True
 
 
     def handle_login_data(self, data_length):
-        data = self.client_socket.recv(data_length).decode()
-        data = json.loads(data)
+        encrypted_packet = self.client_socket.recv(data_length)
+        data = self.symmetric_protocol_instance.decrypt_data(self.symmetric_key,encrypted_packet)
+        data = json.loads(data.decode())
         print(data["row"])
         self.user_data = data["row"]
 

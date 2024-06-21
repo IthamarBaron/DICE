@@ -1,6 +1,7 @@
 import asyncio
 import json
 import base64
+import time
 
 import Protocol
 from DatabaseManager import Database
@@ -159,33 +160,36 @@ class Server:
             data = f"{channel_id}"
             self.clients[client_id][0].send(data.encode())
 
-
-
     def handle_file_request(self, data_length, client_id):
+        try:
+            encrypted_packet = self.clients[client_id][0].recv(data_length)
+            data = self.symmetric_protocol_instance.decrypt_data(self.clients_symmetric_keys[client_id],
+                                                                 encrypted_packet)
+            requested_file_info = json.loads(data.decode())  # file_name, channel_id
+            message_id = self.clients[client_id][1].get_message_id_by_name(requested_file_info["file_name"],
+                                                                           int(requested_file_info["channel_id"]))
 
-        encrypted_packet = self.clients[client_id][0].recv(data_length)
-        data = self.symmetric_protocol_instance.decrypt_data(self.clients_symmetric_keys[client_id], encrypted_packet)
-        requested_file_info = json.loads(data.decode()) # file_name , channel_id
+            if message_id != 0:
+                temp = asyncio.run_coroutine_threadsafe(
+                    self.bot_instance.assemble_file_from_chat(message_id, int(requested_file_info["channel_id"])),
+                    self.bot_instance.bot.loop)
+                file_bytes = temp.result()
 
-        message_id = self.clients[client_id][1].get_message_id_by_name(requested_file_info["file_name"],
-                                                          int(requested_file_info["channel_id"]))
-        if message_id != 0:
-            temp = asyncio.run_coroutine_threadsafe(
-                self.bot_instance.assemble_file_from_chat(message_id, int(requested_file_info["channel_id"])),
-                self.bot_instance.bot.loop)
-            file_bytes = temp.result()
+                packet = {
+                    "file_name": requested_file_info["file_name"],
+                    "len_file_bytes": len(file_bytes)
+                }
+                packet = json.dumps(packet)
+                encrypted_packet = self.symmetric_protocol_instance.encrypt_packet(
+                    self.clients_symmetric_keys[client_id], packet)
 
-
-            packet = {
-                "file_name": requested_file_info["file_name"],
-                "len_file_bytes": len(file_bytes)
-            }
-
-            data = f"{2}{self.zero_fill_length(str(packet))}{json.dumps(packet)}".encode()
-            self.clients[client_id][0].sendall(data)
-            self.clients[client_id][0].sendall(file_bytes)
-        else:
-            print(f" [CLIENT_THREAD {client_id}] message id is 0")
+                data = f"{2}{len(encrypted_packet):04}".encode() + encrypted_packet
+                self.clients[client_id][0].sendall(data)
+                self.clients[client_id][0].sendall(file_bytes)
+            else:
+                print(f"[CLIENT_THREAD {client_id}] message id is 0")
+        except Exception as e:
+            print(f"Error handling file request: {e}")
 
     def handle_deletion_request(self, data_length,client_id):
         encrypted_packet = self.clients[client_id][0].recv(data_length)
@@ -211,7 +215,9 @@ class Server:
             "row": row
         }
         print(row)
-        data_to_send = f"{1}{self.zero_fill_length(str(packet))}{json.dumps(packet)}".encode()
+        packet = json.dumps(packet)
+        packet = self.symmetric_protocol_instance.encrypt_packet(self.clients_symmetric_keys[client_id],packet)
+        data_to_send = f"{1}{self.zero_fill_length(str(packet))}".encode() + packet
         self.clients[client_id][0].sendall(data_to_send)
 
     def handle_files_for_initiation(self, data_length, client_id):
@@ -224,7 +230,10 @@ class Server:
             "files": files
         }
         print(f"Files: {files}")
-        data_to_send = f"{3}{self.zero_fill_length(str(packet))}{json.dumps(packet)}".encode()
+
+        packet = json.dumps(packet)
+        packet = self.symmetric_protocol_instance.encrypt_packet(self.clients_symmetric_keys[client_id],packet)
+        data_to_send = f"{3}{self.zero_fill_length(str(packet))}".encode() + packet
         self.clients[client_id][0].send(data_to_send)
 
     def handle_symmetric_key(self, data_length, client_id):
