@@ -10,6 +10,7 @@ import socket
 import DiscordBot
 import threading
 
+FILE_ENCRYPTION_KEY = b'\x184N\xfbn\xb4u+%\xb3\xdbw\xd9\x94X\x98'
 
 class Server:
 
@@ -38,7 +39,6 @@ class Server:
         """
 
 
-        Protocol.Protocol.generate_key() #TODO: SWAP LATER
         self.asymmetric_protocol_instance.create_server_keys()
         print(f" [MAIN THREAD] Server public key in server {self.asymmetric_protocol_instance.get_public_key()}")
         server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -59,6 +59,7 @@ class Server:
 
 
     def run_server_for_client(self, client_id):
+
         self.clients[client_id].append(Database("Dice-Database.db"))
 
         packet = {
@@ -81,6 +82,7 @@ class Server:
             self.packet_handlers[packet_id](data_length, client_id)
             return True
         except ValueError:
+            print(f"[CLIENT_THREAD {client_id}] Client {client_id} has disconnected")
             return False # client disconnected
         except Exception as e:
             raise e
@@ -108,12 +110,20 @@ class Server:
 
             file_bytes = b""
             while len(file_bytes) != file_size:
+                print(f"[debug file enc] {len(file_bytes) }!?= {file_size}")
+
                 part_of_file = self.clients[client_id][0].recv(file_size - len(file_bytes))
+                print(f"[debug file enc] part_of_file = {part_of_file}")
                 if not len(part_of_file):
                     print("Connection lost")
                     return [0, 0, 0]
                 file_bytes += part_of_file
+
             # file_bytes = Protocol.Protocol.decrypt_incoming_data(file_bytes)
+            print(f"[debug file enc] before decryption = {file_bytes}")
+            file_bytes = self.symmetric_protocol_instance.decrypt_data(self.clients_symmetric_keys[client_id], file_bytes)
+            print(f"[debug file enc] after decryption = {file_bytes}")
+            file_bytes = self.symmetric_protocol_instance.encrypt_data(FILE_ENCRYPTION_KEY, file_bytes)
             return [file_name, file_bytes, channel_id]
         except Exception as e:
             raise e
@@ -175,6 +185,8 @@ class Server:
                     self.bot_instance.bot.loop)
                 file_bytes = temp.result()
 
+                file_bytes = self.symmetric_protocol_instance.decrypt_data(FILE_ENCRYPTION_KEY, file_bytes)
+                file_bytes = self.symmetric_protocol_instance.encrypt_data(self.clients_symmetric_keys[client_id], file_bytes)
                 packet = {
                     "file_name": requested_file_info["file_name"],
                     "len_file_bytes": len(file_bytes)

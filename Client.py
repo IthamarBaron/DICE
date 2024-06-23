@@ -36,7 +36,6 @@ class Client:
             self.client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             self.client_socket.connect((self.host, self.port))
             print(f"Connected to the server at {self.host}:{self.port}")
-            Protocol.Protocol.load_key()
             return True
         except Exception as e:
             print(f"Connection error: {str(e)}")
@@ -71,20 +70,27 @@ class Client:
             print(f"Receiving file: {file_name} of size: {file_size / (1024 ** 2):.2f} MB")
 
             received_bytes_count = 0
-            file = open(f"received_{file_name}", 'wb')
+            file_bytes = b""  # Initialize an empty byte string to accumulate file data
+
             while received_bytes_count < file_size:
                 part_of_file = self.client_socket.recv(min(file_size - received_bytes_count, 4096))
                 if not part_of_file:
                     print("Connection lost")
                     break
-                file.write(part_of_file)
+                file_bytes += part_of_file
                 received_bytes_count += len(part_of_file)
 
-            file.close()
+            # After all bytes are received, write them to a file
+            file_bytes = self.symmetric_protocol_instance.decrypt_data(self.symmetric_key, file_bytes)
+            with open(f"received_{file_name}", 'wb') as file:
+                file.write(file_bytes)
+
+            # Calculate elapsed time and download speed
             self.temp_end_time = time.time()
             delta_time = int(self.temp_end_time - self.temp_start_time)
             print(f"Time elapsed: {delta_time} seconds")
-            print(f"Download average speed: {(file_size / (1024 ** 2)) / delta_time} MB/s")
+            print(f"Download average speed: {(file_size / (1024 ** 2)) / delta_time:.2f} MB/s")
+
         except Exception as e:
             print(f"Error receiving file: {e}")
 
@@ -101,6 +107,7 @@ class Client:
 
             with open(file_path, "rb") as file:
                 file_data = file.read()
+            file_data = self.symmetric_protocol_instance.encrypt_data(self.symmetric_key, file_data)
             file_size = len(file_data)
 
             packet = {
@@ -117,7 +124,6 @@ class Client:
             print(f"[DEBUG LOG] Encrypted packet length: {len(encrypted_packet)}")
             print(f"[DEBUG LOG] Encrypted packet: {encrypted_packet}")
             print(f"[DEBUG LOG] File data: {file_data}")
-
             # Send header + encrypted packet
             self.client_socket.sendall(data_to_send)
 
