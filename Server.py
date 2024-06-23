@@ -40,7 +40,6 @@ class Server:
 
 
         self.asymmetric_protocol_instance.create_server_keys()
-        print(f" [MAIN THREAD] Server public key in server {self.asymmetric_protocol_instance.get_public_key()}")
         server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         server_socket.bind((self.host, self.port))
         connected_clients = 0
@@ -85,7 +84,6 @@ class Server:
             print(f"[CLIENT_THREAD {client_id}] Client {client_id} has disconnected")
             return False # client disconnected
         except Exception as e:
-            raise e
             print(f" [CLIENT_THREAD {client_id}] Error receiving data: {e}")
 
 
@@ -96,12 +94,10 @@ class Server:
         """
         try:
             encrypted_packet = self.clients[client_id][0].recv(data_length)
-            print(f"ENCEYPTED_PACET = {encrypted_packet}")
             data = self.symmetric_protocol_instance.decrypt_packet(self.clients_symmetric_keys[client_id], encrypted_packet)
             data = json.loads(data)
             file_info = data
 
-            print(f"File info = {file_info}")
             file_name = file_info["file_name"]
             file_size = int(file_info["file_size"])
             channel_id = int(file_info["channel_id"])
@@ -110,23 +106,18 @@ class Server:
 
             file_bytes = b""
             while len(file_bytes) != file_size:
-                print(f"[debug file enc] {len(file_bytes) }!?= {file_size}")
 
                 part_of_file = self.clients[client_id][0].recv(file_size - len(file_bytes))
-                print(f"[debug file enc] part_of_file = {part_of_file}")
                 if not len(part_of_file):
                     print("Connection lost")
                     return [0, 0, 0]
                 file_bytes += part_of_file
 
             # file_bytes = Protocol.Protocol.decrypt_incoming_data(file_bytes)
-            print(f"[debug file enc] before decryption = {file_bytes}")
             file_bytes = self.symmetric_protocol_instance.decrypt_data(self.clients_symmetric_keys[client_id], file_bytes)
-            print(f"[debug file enc] after decryption = {file_bytes}")
             file_bytes = self.symmetric_protocol_instance.encrypt_data(FILE_ENCRYPTION_KEY, file_bytes)
             return [file_name, file_bytes, channel_id]
         except Exception as e:
-            raise e
             print(f"Error receive file: {e}")
         return [0, 0, 0]
 
@@ -142,7 +133,6 @@ class Server:
     # region Handlers
     def handle_file_and_send_to_discord(self, data_length, client_id):
         file_data = self.receive_file(data_length, client_id)  # file name | file content | channelID
-        print(f"FILE CONTENT = {file_data[1]}")
         if file_data[1]:
             self.send_files_to_discord(file_data[0], file_data[1], file_data[2], client_id)
 
@@ -151,7 +141,6 @@ class Server:
         data = self.symmetric_protocol_instance.decrypt_data(self.clients_symmetric_keys[client_id],encrypted_packet)
         data = json.loads(data.decode())
 
-        print(data)
 
         if not self.clients[client_id][1].is_username_availability(data["username"]):
             print(f" [CLIENT_THREAD {client_id}] Username unavailable")
@@ -166,7 +155,6 @@ class Server:
                                                     self.bot_instance.bot.loop)
             channel_id = attempt_channel_creation.result()
             self.clients[client_id][1].create_new_account(data["username"], data["password"], channel_id)
-            print(channel_id)
             data = f"{channel_id}"
             self.clients[client_id][0].send(data.encode())
 
@@ -213,7 +201,7 @@ class Server:
                                                 int(data["channel_id"])), self.bot_instance.bot.loop)
         is_successful = proc.result()
         if is_successful:
-            print(f" [CLIENT_THREAD {client_id}] successful!")
+            print(f" [CLIENT_THREAD {client_id}] file deletion - successful!")
             self.clients[client_id][1].delete_file_in_table(data["file_name"], data["channel_id"])
         # TODO: make threaded
 
@@ -226,7 +214,6 @@ class Server:
         packet = {
             "row": row
         }
-        print(row)
         packet = json.dumps(packet)
         packet = self.symmetric_protocol_instance.encrypt_packet(self.clients_symmetric_keys[client_id],packet)
         data_to_send = f"{1}{self.zero_fill_length(str(packet))}".encode() + packet
@@ -254,9 +241,7 @@ class Server:
         encrypted_symmetric_key_base64 = data["encrypted_symmetric_key_base64"]
         encrypted_symmetric_key = base64.b64decode(encrypted_symmetric_key_base64)
         symmetric_key = self.asymmetric_protocol_instance.decrypt_data(encrypted_symmetric_key)
-        print(f"DECRYPTED SYMMETRIC KEY: [{symmetric_key}]")
         self.clients_symmetric_keys.append(symmetric_key)
-        print(self.clients_symmetric_keys)
 
 
     # endregion Handlers

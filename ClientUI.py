@@ -175,19 +175,23 @@ class ManagerUI:
         self.login_signup_frame()
 
     def upload_file(self):
-        self.uploded_file_path = filedialog.askopenfilename()
-        file_size = os.path.getsize(self.uploded_file_path)
-        file_size = file_size / (1024 ** 3)  # gb
-        if file_size > 1:
-            self.uploded_file_path = None
-            # TODO: DISPLAY FILE LARGER ERROR
+        self.uploaded_file_path = filedialog.askopenfilename()
+        if self.uploaded_file_path is not None:
+            file_size = os.path.getsize(self.uploaded_file_path)
+            file_size = file_size / (1024 ** 3)  # gb
+            if file_size > 1:
+                self.uploaded_file_path = None
+                # TODO: DISPLAY FILE LARGER ERROR
+                return
+        else:
             return
+
 
     def send_data(self):
         try:
-            if self.uploded_file_path:
+            if self.uploaded_file_path:
                 thread = threading.Thread(target=self.client_instance.send_file_to_server,
-                                          args=(self.uploded_file_path, self.client_instance.user_data[2]), daemon=True)
+                                          args=(self.uploaded_file_path, self.client_instance.user_data[2]), daemon=True)
                 thread.start()
             print("Finished sending method!")
         except Exception as e:

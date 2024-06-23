@@ -48,7 +48,6 @@ class Client:
             print(f"packetID {packet_id}")
             data_length = int(self.client_socket.recv(4).decode())
             print(f"data_length {data_length}")
-            print(f"calling {str(self.packet_handlers[packet_id])}")
             self.packet_handlers[packet_id](data_length)
 
         except ValueError as e:
@@ -57,7 +56,6 @@ class Client:
             self.client_socket.recv(1240)
         except Exception as e:
             print(f"Error receiving data: {e}")
-            raise e
 
     def get_file_from_server(self, data_length):
         try:
@@ -120,10 +118,8 @@ class Client:
             encrypted_packet = self.symmetric_protocol_instance.encrypt_packet(self.symmetric_key, packet)
 
             data_to_send = f"{2}{len(encrypted_packet):04}".encode() + encrypted_packet
-            print(f"[DEBUG LOG] data_to_send header: {data_to_send[:5]}")
-            print(f"[DEBUG LOG] Encrypted packet length: {len(encrypted_packet)}")
-            print(f"[DEBUG LOG] Encrypted packet: {encrypted_packet}")
-            print(f"[DEBUG LOG] File data: {file_data}")
+            #TODO: MAKE SURE REMOVED PRINTS DONT EFFECT TIME SLEEP.
+
             # Send header + encrypted packet
             self.client_socket.sendall(data_to_send)
 
@@ -157,7 +153,6 @@ class Client:
             "file_name": file_name,
             "channel_id": channel_id
         }
-        print("method called")
 
         #data_to_send = Protocol.Protocol.prepare_data_to_send(4, packet)
         packet = json.dumps(packet)
@@ -223,18 +218,16 @@ class Client:
         encrypted_packet = self.client_socket.recv(data_length)
         data = self.symmetric_protocol_instance.decrypt_data(self.symmetric_key,encrypted_packet)
         data = json.loads(data.decode())
-        print(data["row"])
         self.user_data = data["row"]
 
     def handle_server_key(self, data_length):
         data = self.client_socket.recv(data_length).decode()
         data = json.loads(data)
         self.server_publc_key = self.asymmetric_protocol_instance.load_public_key_from_str(data["server_public_key"])
-        print(f"Server public key in client {self.server_publc_key}")
+        print(f"successfully received public key")
         # Generate a symmetric key:
         if not self.symmetric_key:
             self.symmetric_key = Protocol.get_random_bytes(16)
-        print(f"type of shit {type(self.server_publc_key)}")
         encrypted_symmetric_key = self.asymmetric_protocol_instance.encrypt_symmetric_key(self.symmetric_key, self.server_publc_key)
         encrypted_symmetric_key_base64 = base64.b64encode(encrypted_symmetric_key).decode('utf-8')
 
