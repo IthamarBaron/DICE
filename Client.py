@@ -1,6 +1,7 @@
 import base64
 import os
 import json
+import threading
 import time
 import socket
 
@@ -129,6 +130,9 @@ class Client:
         except Exception as e:
             print(f"Error sending file: {e}")
 
+    def send_file_to_server_threaded(self, file_path: str, channel_id: int):
+        thread = threading.Thread(target=self.send_file_to_server, args=(file_path, channel_id), daemon=True)
+        thread.start()
     def request_signup(self, username, password):
 
         packet = {

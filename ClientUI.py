@@ -134,11 +134,11 @@ class ManagerUI:
         self.title_label.pack(pady=10)
 
         # file upload button
-        self.upload_button = tk.Button(self.root, text="Upload File", command=self.upload_file)
+        self.upload_button = tk.Button(self.root, text="Upload File", command=self.upload_file_wrapper)
         self.upload_button.pack(pady=20)
 
         # send button
-        self.send_button = tk.Button(self.root, text="Send", command=self.send_data)
+        self.send_button = tk.Button(self.root, text="Send", command=self.send_data_wrapper)
         self.send_button.pack(pady=20)
 
         # reload button
@@ -174,6 +174,12 @@ class ManagerUI:
         self.current_frame.destroy()
         self.login_signup_frame()
 
+
+    def upload_file_wrapper(self):
+        thread = threading.Thread(target=self.upload_file, daemon=True)
+        thread.start()
+
+
     def upload_file(self):
         self.uploaded_file_path = filedialog.askopenfilename()
         if self.uploaded_file_path is not None:
@@ -187,10 +193,15 @@ class ManagerUI:
             return
 
 
+    def send_data_wrapper(self):
+        thread = threading.Thread(target=self.send_data, daemon=True)
+        thread.start()
+
+
     def send_data(self):
         try:
             if self.uploaded_file_path:
-                thread = threading.Thread(target=self.client_instance.send_file_to_server,
+                thread = threading.Thread(target=self.client_instance.send_file_to_server_threaded,
                                           args=(self.uploaded_file_path, self.client_instance.user_data[2]), daemon=True)
                 thread.start()
             print("Finished sending method!")
