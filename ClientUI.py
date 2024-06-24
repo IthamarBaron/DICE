@@ -123,16 +123,15 @@ class ManagerUI:
         label_dice.pack(side=tk.BOTTOM, anchor=tk.W)
 
     def main_application_frame(self):
-        self.initiate_users_files()
-
         # Create a canvas widget
-        self.canvas = tk.Canvas(self.root, bg=BACKGROUND_COLOR)
-        self.root.geometry("700x350")
+        self.canvas = tk.Canvas(self.root, bg="white")
+        self.root.geometry("400x350")
         self.canvas.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
 
         # Create a frame to hold the non-scrollable content
-        self.main_frame = tk.Frame(self.canvas, bg=BACKGROUND_COLOR)
+        self.main_frame = tk.Frame(self.canvas, bg="white")
         self.main_frame.pack(fill=tk.BOTH, expand=True)  # Pack to fill the canvas
+        self.initiate_users_files()
 
         # Add a scrollbar linked to the canvas and the main frame
         scrollbar = tk.Scrollbar(self.root, orient=tk.VERTICAL, command=self.canvas.yview)
@@ -142,29 +141,34 @@ class ManagerUI:
         self.canvas.configure(yscrollcommand=scrollbar.set)
 
         # Create a window inside the canvas to hold the main frame
-        self.canvas.create_window((0, 0), window=self.main_frame, anchor=tk.NW)
+        self.canvas.create_window((0, 0), window=self.main_frame, anchor=tk.CENTER)
 
         # Example existing widgets inside the main frame
         self.title_label = tk.Label(self.main_frame, text="DICE - Debug panel", font=("Arial", 16),
-                                    bg=BACKGROUND_COLOR)
-        self.title_label.pack(pady=5)
+                                    bg="white")
+        self.title_label.pack(pady=10)
 
         self.upload_button = tk.Button(self.main_frame, text="Upload File", command=self.upload_file_wrapper)
-        self.upload_button.pack(pady=5)
+        self.upload_button.pack(pady=10)
 
         self.send_button = tk.Button(self.main_frame, text="Send", command=self.send_data_wrapper)
-        self.send_button.pack(pady=5)
+        self.send_button.pack(pady=10)
 
         self.reload_files_button = tk.Button(self.main_frame, text="Refresh Files", command=self.reload_files)
-        self.reload_files_button.pack(pady=5)
+        self.reload_files_button.pack(pady=10)
 
-        self.instantiate_file_labels()
+        # Create a scrollable frame inside the main frame
+        self.scrollable_frame = tk.Frame(self.main_frame, bg="white")
+        self.scrollable_frame.pack(fill=tk.BOTH, expand=True)
 
-        # Bind the canvas to the main frame for scrolling functionality
+        # Bind the canvas to the scrollable frame for scrolling functionality
         def on_configure(event):
             self.canvas.configure(scrollregion=self.canvas.bbox("all"))
 
-        self.main_frame.bind("<Configure>", on_configure)
+        self.scrollable_frame.bind("<Configure>", on_configure)
+
+        # Instantiate file labels inside the scrollable frame
+        self.instantiate_file_labels()
 
         # Trigger a method after a delay (e.g., 200 milliseconds)
         self.root.after(200, self.check_reload_flag)
@@ -285,26 +289,25 @@ class ManagerUI:
             self.client_instance.users_files[file[0]] = file[1]
 
     def instantiate_file_labels(self):
+        # Clear previous widgets if any
+        for widget in self.scrollable_frame.winfo_children():
+            widget.destroy()
+
+        # Create file frames dynamically
         for file_name in self.client_instance.users_files.keys():
-            # Frame to group components for each file
-            file_frame = tk.Frame(self.root)
-            file_frame.pack()
+            file_frame = tk.Frame(self.scrollable_frame)
+            file_frame.pack(fill=tk.X, padx=10, pady=5)
 
-            # File Name Label
             file_label = tk.Label(file_frame, text=file_name)
-            file_label.pack(side=tk.LEFT, padx=5)
+            file_label.pack(side=tk.LEFT)
 
-            # Download Button
             download_button = tk.Button(file_frame, text="Download", fg="green",
                                         command=lambda name=file_name: self.download_file(name))
             download_button.pack(side=tk.LEFT, padx=5)
 
-            # Delete Button
             delete_button = tk.Button(file_frame, text="Delete", fg="red",
                                       command=lambda name=file_name: self.delete_file(name))
             delete_button.pack(side=tk.LEFT, padx=5)
-
-            self.display_files.extend([file_frame, file_label, download_button, delete_button])
 
     def clear_file_labels(self):
         for button in self.display_files:
