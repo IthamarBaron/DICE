@@ -220,8 +220,15 @@ class Client:
 
     def handle_login_data(self, data_length):
         encrypted_packet = self.client_socket.recv(data_length)
-        data = self.symmetric_protocol_instance.decrypt_data(self.symmetric_key,encrypted_packet)
-        data = json.loads(data.decode())
+        decrypted_data = self.symmetric_protocol_instance.decrypt_data(self.symmetric_key, encrypted_packet)
+        data = json.loads(decrypted_data.decode())
+
+        # Assuming 'file_encryption_key' is Base64 encoded in the received JSON
+        if "file_encryption_key" in data["row"]:
+            file_encryption_key_b64 = data["row"]["file_encryption_key"]
+            file_encryption_key_bytes = base64.b64decode(file_encryption_key_b64)
+            data["row"]["file_encryption_key"] = file_encryption_key_bytes
+
         self.user_data = data["row"]
 
     def handle_server_key(self, data_length):

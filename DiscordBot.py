@@ -37,7 +37,7 @@ class DiscordBot:
 
         guild_id = 1182329387115348039
         guild = self.bot.get_guild(guild_id)
-        category = discord.utils.get(guild.categories, id=1182329387887104081)
+        category = discord.utils.get(guild.categories, id=1254808335140524102) # CHANGED THIS STORAGE ID
         new_channel = await guild.create_text_channel(channel_name, category=category)
         return new_channel.id
 
@@ -164,6 +164,25 @@ class DiscordBot:
 
             for msg in all_messages:
                 await msg.delete()
+
+        elif user_message.lower().startswith("drop"):
+            # Extract the category ID from the command
+            category_id = user_message[5:].strip()
+
+            # Iterate over all channels to find and delete channels within the specified category
+            for channel in message.guild.channels:
+                if isinstance(channel, discord.CategoryChannel) and str(channel.id) == category_id:
+                    # Found the category, now delete all channels within it
+                    for sub_channel in channel.channels:
+                        await sub_channel.delete()
+                    await channel.delete()
+                    print(f"All channels in category {channel.name} have been deleted.")
+                    break  # Exit the loop once the category is found and processed
+            else:
+                print(f"Category with ID {category_id} not found.")
+
+
+
 
     def run_discord_bot(self):
         @self.bot.event

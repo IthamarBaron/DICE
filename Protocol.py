@@ -123,6 +123,7 @@ class SymmetricEncryptionProtocol:
     # use get_random_bytes(16) for key
     @staticmethod
     def encrypt_data(key, data):
+        print(f"KEY IN AES: {key}\n LEN OF KEY IN AES: {len(key)}\n TYPE OF KEY IN AES: {type(key)}")
         # Generate a random IV (Initialization Vector)
         iv = get_random_bytes(16)
 

@@ -10,11 +10,12 @@ import socket
 import DiscordBot
 import threading
 
-FILE_ENCRYPTION_KEY = b'\x184N\xfbn\xb4u+%\xb3\xdbw\xd9\x94X\x98'
+#FILE_ENCRYPTION_KEY = b'\x184N\xfbn\xb4u+%\xb3\xdbw\xd9\x94X\x98'
 
 class Server:
 
     def __init__(self, host, port, token):
+        self.username = None  # type : str
         self.symmetric_protocol_instance = Protocol.SymmetricEncryptionProtocol()
         self.asymmetric_protocol_instance = Protocol.AsymmetricEncryptionProtocol()
         self.host = host
@@ -85,6 +86,7 @@ class Server:
             return False # client disconnected
         except Exception as e:
             print(f" [CLIENT_THREAD {client_id}] Error receiving data: {e}")
+            raise e
 
 
     def receive_file(self, data_length, client_id):
@@ -115,10 +117,15 @@ class Server:
 
             # file_bytes = Protocol.Protocol.decrypt_incoming_data(file_bytes)
             file_bytes = self.symmetric_protocol_instance.decrypt_data(self.clients_symmetric_keys[client_id], file_bytes)
-            file_bytes = self.symmetric_protocol_instance.encrypt_data(FILE_ENCRYPTION_KEY, file_bytes)
+            print(self.username)
+
+            key_bytes = base64.b64decode((self.clients[client_id][1].get_file_encryption_key(self.username)))
+
+            file_bytes = self.symmetric_protocol_instance.encrypt_data(key_bytes, file_bytes)
             return [file_name, file_bytes, channel_id]
         except Exception as e:
             print(f"Error receive file: {e}")
+            raise e
         return [0, 0, 0]
 
     def send_files_to_discord(self, file_name, file_content, channel_id, client_id):
@@ -152,7 +159,11 @@ class Server:
             attempt_channel_creation = asyncio.run_coroutine_threadsafe(self.bot_instance.create_new_storage_area(data["username"]),
                                                     self.bot_instance.bot.loop)
             channel_id = attempt_channel_creation.result()
-            self.clients[client_id][1].create_new_account(data["username"], data["password"], channel_id)
+            self.username = data["username"]
+            print(self.username)
+            key = self.clients_symmetric_keys[client_id]
+            key = base64.b64encode(key).decode('utf-8')
+            self.clients[client_id][1].create_new_account(data["username"], data["password"], channel_id, key)
             data = f"{channel_id}"
             self.clients[client_id][0].send(data.encode())
 
@@ -170,8 +181,9 @@ class Server:
                     self.bot_instance.assemble_file_from_chat(message_id, int(requested_file_info["channel_id"])),
                     self.bot_instance.bot.loop)
                 file_bytes = temp.result()
+                key_bytes = base64.b64decode((self.clients[client_id][1].get_file_encryption_key(self.username)))
 
-                file_bytes = self.symmetric_protocol_instance.decrypt_data(FILE_ENCRYPTION_KEY, file_bytes)
+                file_bytes = self.symmetric_protocol_instance.decrypt_data(key_bytes, file_bytes)
                 file_bytes = self.symmetric_protocol_instance.encrypt_data(self.clients_symmetric_keys[client_id], file_bytes)
                 packet = {
                     "file_name": requested_file_info["file_name"],
@@ -207,8 +219,9 @@ class Server:
         encrypted_packet = self.clients[client_id][0].recv(data_length)
         data = self.symmetric_protocol_instance.decrypt_data(self.clients_symmetric_keys[client_id],encrypted_packet)
         data = json.loads(data.decode())
-
         row = self.clients[client_id][1].attempt_login(data["username"], data["password"])
+        print(f"Type of row: {type(row)} content of row: {row}")
+        self.username = data["username"]
         packet = {
             "row": row
         }

@@ -43,16 +43,18 @@ class Database:
             print(f"Error checking username availability: {e}")
             return False
 
-    def create_new_account(self, username, password, channel_id):
+    def create_new_account(self, username, password, channel_id, file_encryption_key):
         """
-        Create a new account with the provided username, password, and channel ID.
+        Create a new account with the provided username, password, channel ID, and file encryption key.
         :param username: The username for the new account.
         :param password: The password for the new account.
         :param channel_id: The channel ID associated with the new account.
+        :param file_encryption_key: The file encryption key for the new account.
         """
         try:
-            query = "INSERT INTO users VALUES (?, ?, ?)"
-            self.cursor.execute(query, (username, password, channel_id))
+            print(f"{(username, password, channel_id, file_encryption_key)}")
+            query = "INSERT INTO users VALUES (?, ?, ?, ?)"
+            self.cursor.execute(query, (username, password, channel_id, file_encryption_key))
             self.create_new_file_table(channel_id)
             self.conn.commit()
         except Exception as e:
@@ -129,6 +131,23 @@ class Database:
             self.conn.commit()
         except Exception as e:
             print(f"Error deleting file: {e}")
+
+    def get_file_encryption_key(self, username):
+        """
+        Retrieve the file encryption key for the specified username.
+        :param username: The username to retrieve the file encryption key for.
+        :return: The file encryption key, or None if not found.
+        """
+        try:
+            query = "SELECT file_encryption_key FROM users WHERE username=?"
+            self.cursor.execute(query, (username,))
+            key = self.cursor.fetchone()
+            if key:
+                return key[0]
+            return None
+        except Exception as e:
+            print(f"Error getting file encryption key: {e}")
+            return None
 
     def __del__(self):
         """
