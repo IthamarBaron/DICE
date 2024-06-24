@@ -123,38 +123,51 @@ class ManagerUI:
         label_dice.pack(side=tk.BOTTOM, anchor=tk.W)
 
     def main_application_frame(self):
-
         self.initiate_users_files()
 
-        self.current_frame = tk.Frame(self.root, bg=BACKGROUND_COLOR)
-        self.root.title("File Upload")
+        # Create a canvas widget
+        self.canvas = tk.Canvas(self.root, bg=BACKGROUND_COLOR)
+        self.root.geometry("700x350")
+        self.canvas.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
 
-        # title
-        self.title_label = tk.Label(self.root, text="DICE - Debug panel", font=("Arial", 16))
-        self.title_label.pack(pady=10)
+        # Create a frame to hold the non-scrollable content
+        self.main_frame = tk.Frame(self.canvas, bg=BACKGROUND_COLOR)
+        self.main_frame.pack(fill=tk.BOTH, expand=True)  # Pack to fill the canvas
 
-        # file upload button
-        self.upload_button = tk.Button(self.root, text="Upload File", command=self.upload_file_wrapper)
-        self.upload_button.pack(pady=20)
+        # Add a scrollbar linked to the canvas and the main frame
+        scrollbar = tk.Scrollbar(self.root, orient=tk.VERTICAL, command=self.canvas.yview)
+        scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
 
-        # send button
-        self.send_button = tk.Button(self.root, text="Send", command=self.send_data_wrapper)
-        self.send_button.pack(pady=20)
+        # Configure the canvas and scrollbar
+        self.canvas.configure(yscrollcommand=scrollbar.set)
 
-        # reload button
-        self.reload_files_button = tk.Button(self.root, text="Refresh Files", command=self.reload_files)
-        self.reload_files_button.pack(anchor="se")
-        self.reload_files_buttont = tk.Button(self.root, text="CLEAR Files", command=self.clear_file_labels)
-        self.reload_files_buttont.pack(anchor="se")
-        self.reload_files_buttontt = tk.Button(self.root, text="INNIT Files", command=self.initiate_users_files)
-        self.reload_files_buttontt.pack(anchor="se")
-        self.reload_files_buttontt = tk.Button(self.root, text="INSTANTIATE Files",
-                                               command=self.instantiate_file_labels)
-        self.reload_files_buttontt.pack(anchor="se")
+        # Create a window inside the canvas to hold the main frame
+        self.canvas.create_window((0, 0), window=self.main_frame, anchor=tk.NW)
+
+        # Example existing widgets inside the main frame
+        self.title_label = tk.Label(self.main_frame, text="DICE - Debug panel", font=("Arial", 16),
+                                    bg=BACKGROUND_COLOR)
+        self.title_label.pack(pady=5)
+
+        self.upload_button = tk.Button(self.main_frame, text="Upload File", command=self.upload_file_wrapper)
+        self.upload_button.pack(pady=5)
+
+        self.send_button = tk.Button(self.main_frame, text="Send", command=self.send_data_wrapper)
+        self.send_button.pack(pady=5)
+
+        self.reload_files_button = tk.Button(self.main_frame, text="Refresh Files", command=self.reload_files)
+        self.reload_files_button.pack(pady=5)
 
         self.instantiate_file_labels()
-        self.root.after(200, self.check_reload_flag)
 
+        # Bind the canvas to the main frame for scrolling functionality
+        def on_configure(event):
+            self.canvas.configure(scrollregion=self.canvas.bbox("all"))
+
+        self.main_frame.bind("<Configure>", on_configure)
+
+        # Trigger a method after a delay (e.g., 200 milliseconds)
+        self.root.after(200, self.check_reload_flag)
 
     # endregion FRAMES
 
