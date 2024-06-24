@@ -145,9 +145,9 @@ class Client:
         data_to_send = f"{1}{Client.zero_fill_length(str(packet))}".encode() + packet
         self.client_socket.send(data_to_send)
 
-        response = self.client_socket.recv(19)
+        response = self.client_socket.recv(19).decode()
         print(response)
-        if response == 0:
+        if response.isalpha():
             return False
         else:
             return True

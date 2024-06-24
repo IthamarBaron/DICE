@@ -142,11 +142,9 @@ class Server:
         data = json.loads(data.decode())
 
 
-        if not self.clients[client_id][1].is_username_availability(data["username"]):
+        if not self.clients[client_id][1].is_username_available(data["username"]):
             print(f" [CLIENT_THREAD {client_id}] Username unavailable")
-            #  hahaha i am 19 chars long
-            data = "noooooooooooooooooo"
-            data = f"{data}"
+            data = "Invalid"
             self.clients[client_id][0].send(data.encode())
             pass
         else:
