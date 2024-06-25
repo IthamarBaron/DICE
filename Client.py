@@ -145,9 +145,12 @@ class Client:
         data_to_send = f"{1}{Client.zero_fill_length(str(packet))}".encode() + packet
         self.client_socket.send(data_to_send)
 
-        response = self.client_socket.recv(19).decode()
+        response = self.client_socket.recv(1024)
+        data = self.symmetric_protocol_instance.decrypt_data(self.symmetric_key,response)
+        data = data.decode()
+        print(f"data {data}")
         print(response)
-        if response.isalpha():
+        if data.isalpha():
             return False
         else:
             return True

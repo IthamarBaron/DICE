@@ -247,9 +247,11 @@ class ManagerUI:
             self.error_label.config(text="SignUp Failed\nFill both fields")
             return
         is_successful = self.client_instance.request_signup(username, password)
+        print(f"IS SUCCESSFUL = {is_successful}")
         if is_successful:
             self.login()
         else:
+            print(F"IM HERE")
             self.error_label.config(text="SignUp Failed\nName Is Taken")
 
     def download_file(self, filename):

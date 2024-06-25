@@ -144,15 +144,22 @@ class Server:
             self.send_files_to_discord(file_data[0], file_data[1], file_data[2], client_id)
 
     def handle_sign_up_request(self, data_length, client_id):
+        """
+        :param data_length: length of the data to read from the socket
+        :param client_id: id of the client we are dealing with
+        :return: None
+        checks availability of the username, if invalid sends back "invalid" if valid allocates a channel
+        in the discord server and sends back the channel id.
+        """
         encrypted_packet = self.clients[client_id][0].recv(data_length)
-        data = self.symmetric_protocol_instance.decrypt_data(self.clients_symmetric_keys[client_id],encrypted_packet)
+        data = self.symmetric_protocol_instance.decrypt_data(self.clients_symmetric_keys[client_id], encrypted_packet)
         data = json.loads(data.decode())
-
 
         if not self.clients[client_id][1].is_username_available(data["username"]):
             print(f" [CLIENT_THREAD {client_id}] Username unavailable")
             data = "Invalid"
-            self.clients[client_id][0].send(data.encode())
+            data = self.symmetric_protocol_instance.encrypt_data(self.clients_symmetric_keys[client_id], data.encode())
+            self.clients[client_id][0].send(data)
             pass
         else:
             print(f" [CLIENT_THREAD {client_id}] username available")
@@ -163,9 +170,10 @@ class Server:
             print(self.username)
             key = self.clients_symmetric_keys[client_id]
             key = base64.b64encode(key).decode('utf-8')
-            self.clients[client_id][1].create_new_account(data["username"], data["password"], channel_id, key)
+            self.clients[client_id][1].create_new_account(data["username"], data["password"], channel_id, key) # added the key parameter for file encryption!
             data = f"{channel_id}"
-            self.clients[client_id][0].send(data.encode())
+            data = self.symmetric_protocol_instance.encrypt_data(self.clients_symmetric_keys[client_id], data.encode())
+            self.clients[client_id][0].send(data)
 
     def handle_file_request(self, data_length, client_id):
         try:
