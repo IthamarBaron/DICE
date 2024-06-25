@@ -144,7 +144,7 @@ class ManagerUI:
         self.canvas.create_window((0, 0), window=self.main_frame, anchor=tk.CENTER)
 
         # Example existing widgets inside the main frame
-        self.title_label = tk.Label(self.main_frame, text="DICE - Debug panel", font=("Arial", 16),
+        self.title_label = tk.Label(self.main_frame, text="DICE - Debug panel (2.0)", font=("Arial", 16),
                                     bg="white")
         self.title_label.pack(pady=10)
 

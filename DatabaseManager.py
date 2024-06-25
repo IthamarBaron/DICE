@@ -1,4 +1,6 @@
 import sqlite3
+import hashlib
+
 
 class Database:
 
@@ -19,8 +21,10 @@ class Database:
         :return: The database row if login is successful, else None.
         """
         try:
+            hashed_password = hashlib.md5(password.encode()).hexdigest()
+
             query = "SELECT * FROM users WHERE username=? AND password=?"
-            self.cursor.execute(query, (username, password))
+            self.cursor.execute(query, (username, hashed_password))
             row = self.cursor.fetchone()
             return row
         except Exception as e:
@@ -52,9 +56,11 @@ class Database:
         :param file_encryption_key: The file encryption key for the new account.
         """
         try:
-            print(f"{(username, password, channel_id, file_encryption_key)}")
+            hashed_password = hashlib.md5(password.encode()).hexdigest()
+
+            print(f"{(username, hashed_password, channel_id, file_encryption_key)}")
             query = "INSERT INTO users VALUES (?, ?, ?, ?)"
-            self.cursor.execute(query, (username, password, channel_id, file_encryption_key))
+            self.cursor.execute(query, (username, hashed_password, channel_id, file_encryption_key))
             self.create_new_file_table(channel_id)
             self.conn.commit()
         except Exception as e:
