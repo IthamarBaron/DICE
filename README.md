@@ -17,7 +17,7 @@ allowing you to save valuble storage space and save your files for free.
 
 ## How To Run
 
-    1. Start the make sure to set the Token variable to your bot Token.
+    1. Make sure to set the Token variable to your bot Token.
     2. Run `Server`.
     3. Run `ClientUI`.
     4. Enter the ip you want to connect to (defaults to local host 127.0.0.1).
