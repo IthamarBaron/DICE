@@ -47,3 +47,5 @@ I might create a simpler version that is helpful and simple to use.
 
 It is important for me to note that this project was built entirely for educational purposes and was used as my 12th-grade final project.
 In no way do I encourage stealing storage space from Discord or any other platform.
+
+NOTE: More info can be found in the project book.
