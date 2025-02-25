@@ -1,8 +1,8 @@
 
 # Discord Integrated Cryptographic Engine
 
-Dice is used to store large files over discord servers safely for later usage. 
-allowing you to save valuble storage space and save your files for free.
+Dice is used to store large encrypted files over discord servers safely for later usage. 
+allowing you to save valuable storage space and save your files for free.
 
 
 ## Requirements
